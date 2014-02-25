@@ -44,4 +44,4 @@ data SourceQuery = SourceQuery
 
 data PrettyError = PrettyError { message :: LT.Text }
 instance ToJSON PrettyError where
-    toJSON (PrettyError m) = object [ "message" .= m ]
+    toJSON (PrettyError m) = object [ "error" .= m ]

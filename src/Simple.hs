@@ -12,6 +12,7 @@ import           Snap.Core
 import           Types
 import           Util                         (logException, writeError,
                                                writeJSON)
+import System.Timeout (timeout)
 
 simpleSearch :: MVar SourceQuery -> Snap ()
 simpleSearch query_mvar = do
@@ -19,13 +20,16 @@ simpleSearch query_mvar = do
     page <- toInt <$> fromMaybe "0" <$> getParam "page"
     utf_query <- either conversionError return $ decodeUtf8' query
 
-    response <- liftIO $ do
+    maybe_response <- liftIO $ do
         response_mvar <- newEmptyMVar
         putMVar query_mvar $ SourceQuery utf_query page response_mvar
-        takeMVar response_mvar
+        timeout chevalierTimeOut $ takeMVar response_mvar
 
-    either chevalierError writeJSON response
+    either_response <- maybe timeoutError return maybe_response
+    either chevalierError writeJSON either_response
   where
+    chevalierTimeOut = 10000000 -- 10 seconds
+
     toInt bs = maybe 0 fst (B.readInteger bs)
 
     conversionError e = do
@@ -35,3 +39,8 @@ simpleSearch query_mvar = do
     chevalierError e = do
         logException e
         writeError 500 $ string7 "Exception talking to chevalier backend"
+
+    timeoutError = do
+        let msg = "Timed out talking to chevalier backend"
+        logException msg
+        writeError 500 $ string7 msg

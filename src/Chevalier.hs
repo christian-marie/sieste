@@ -29,6 +29,7 @@ chevalier chevalier_url query_mvar =
                     response <- decodeChevalierResponse <$> receive s
                     either error (return . buildSources) response
                 putMVar (queryResponse query) result
+
 encodeChevalierRequest :: ChevalierRequest -> ByteString
 encodeChevalierRequest = runPut . encodeMessage
 
@@ -44,7 +45,6 @@ urlSafeSource s =
       builder = foldl f "" tags
   in LazyBuilder.toLazyText builder
   where
-    f :: LazyBuilder.Builder -> ChevalierTag -> LazyBuilder.Builder
     f acc (ChevalierTag k v) = acc
         <> (LazyBuilder.fromText $ getField v)
         <> "~"
