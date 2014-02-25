@@ -5,7 +5,7 @@ import           Control.Applicative
 import           Control.Concurrent
 import           Control.Exception
 import           Control.Monad
-import           Data.Monoid            (mappend)
+import           Data.Monoid            ((<>))
 import           Data.ProtocolBuffers   hiding (field)
 import           Data.Serialize
 import qualified Data.Text.Lazy.Builder as LazyBuilder
@@ -42,7 +42,6 @@ chevalier chevalier_url query_mvar =
             <> "~"
             <> (LazyBuilder.fromText $ getField k)
             <> ","
-        (<>) = mappend
 
     buildChevalierRequest (SourceQuery q page _ ) = ChevalierRequest
         { requestTags    = putField $ buildTags q
