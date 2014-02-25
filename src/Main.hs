@@ -24,21 +24,22 @@ main = do
     quickHttpServe $
         ifTop (writeBS docString) <|>
         route [ ("simple/search", simpleSearch chevalier_query_mvar) ]
+
   where
     -- Wait for any thread to explode, then restart it whilst logging the
     -- exception.
     watchThreads as restart_action = do
-        (action, err) <- waitAnyCatch as
+        (a, err) <- waitAnyCatch as
 
         case err of
             Right _ -> putStrLn "Thread exited normally (shouldn't happen)"
             Left e -> putStrLn $ "Thread exploded: " ++ show e
 
-        let remaining_threads = filter (/= action) as
-        a <- async restart_action
-
+        restarted <- async restart_action
         threadDelay 1000000
-        watchThreads (a:remaining_threads) restart_action
+
+        let remaining_threads = filter (/= a) as
+        watchThreads (restarted:remaining_threads) restart_action
 
     docString = "This is the Vaultaire REST interface, you can find \
                 \documentation in the wiki under TODO"
