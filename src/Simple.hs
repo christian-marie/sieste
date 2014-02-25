@@ -9,10 +9,10 @@ import           Data.ByteString.Lazy.Builder (string7)
 import           Data.Maybe
 import           Data.Text.Encoding           (decodeUtf8')
 import           Snap.Core
+import           System.Timeout               (timeout)
 import           Types
 import           Util                         (logException, writeError,
                                                writeJSON)
-import System.Timeout (timeout)
 
 simpleSearch :: MVar SourceQuery -> Snap ()
 simpleSearch query_mvar = do
