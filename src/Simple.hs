@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Simple where
 
 import           Control.Applicative
@@ -20,6 +21,7 @@ import           System.Timeout               (timeout)
 import           Types.Chevalier              (SourceQuery (..))
 import           Types.ReaderD                (DataBurst (..), DataFrame (..),
                                                Range (..), RangeQuery (..))
+import Data.Word(Word64)
 import           Util
 
 simpleSearch :: MVar SourceQuery -> Snap ()
@@ -57,8 +59,9 @@ interpolated readerd_mvar = do
     -- This allows us to stream the data the user chunk by chunk.
 
     tags <- tagsOr400 =<< utf8Or400 =<< fromJust <$> getParam "source"
-    start <- toInt <$> fromMaybe "0" <$> getParam "start"
-    end <- toInt <$> fromMaybe "0" <$> getParam "end"
+    start <- fromEpoch . toInt <$> fromMaybe "0" <$> getParam "start"
+    end <- fromEpoch . toInt <$> fromMaybe "0" <$> getParam "end"
+    interval <- toInt <$> fromMaybe "0" <$> getParam "interval"
 
     input <- liftIO $ do
         (output, input) <- spawn Single
@@ -70,11 +73,14 @@ interpolated readerd_mvar = do
                      >-> logExceptions
                      >-> unRange
                      >-> sortBurst
+                     >-> interpolate interval (fromIntegral start + interval)
                      >-> jsonEncode
                      >-> addCommas True)
                     (lift . writeLBS)
     writeBS "]"
   where
+    fromEpoch :: Word64 -> Word64
+    fromEpoch = fromIntegral . (* 1000000000)
     -- Pipes are chained from top to bottom:
 
     -- Log exceptions, pass on Ranges
@@ -94,10 +100,52 @@ interpolated readerd_mvar = do
       where
         compareByTime frame_a frame_b = compare (ts frame_a) (ts frame_b)
         ts = getField . timestamp
+    
+    interpolate interval now = do
+        -- On our first run, we have to find an initial value to interpolate
+        -- from.
+        ps <- await
+        case ps of
+            (p:ps') -> emitAt now p ps'
+            _      -> interpolate interval now
+      where
+        -- t    - the current interpolated target time we are trying to emit
+        --         a value for
+        -- p    - last known data point
+        -- p:ps - next data points
+        emitAt :: Word64 -> DataFrame -> [DataFrame] -> Pipe [DataFrame] Int Snap ()
+        emitAt t p (p':ps) = do
+            let p_time = getTime p
+            if p_time < t
+                then
+                    -- If the next point is beyond the requested_time, we can
+                    -- interpolate its value. If not, we need to look further
+                    -- forward in the list
+                    let p'_time = getTime p' in
+                    if p'_time > t
+                        then do
+                            -- Obviously we have a match now and we can emit
+                            -- this value
+                            yield 42
+                            -- interp (getValue p) (getValue p') ((t - p'_time) / (p_time - p'_time))
+                            -- Now look for the next interval
+                            emitAt (t + interval) p (p':ps)
+                        else
+                            -- Seek forward
+                            emitAt t p' ps
+                else
+                    -- This case should only be hit until our requested time
+                    -- catches up to our first data point
+                    emitAt t p (p':ps)
 
-    jsonEncode = do
-        burst <- encode . toJSON <$> await
-        yield burst
+        -- End of input, request another chunk
+        emitAt t p [] = await >>= emitAt t p
+
+        getTime :: DataFrame -> Word64
+        getTime = fromIntegral . getField . timestamp
+            
+
+    jsonEncode = (encode . toJSON <$> await) >>= yield
 
     -- We want to prepend all but the first burst with a comma.
     addCommas is_first

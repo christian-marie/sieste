@@ -25,7 +25,6 @@ data ChevalierException = BurstDecodeFailure String
     deriving (Show, Typeable)
 instance Exception ChevalierException
 
-
 -- Protobufs follow
 
 data SourceTag = SourceTag
