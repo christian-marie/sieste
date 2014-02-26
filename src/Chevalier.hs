@@ -8,9 +8,9 @@ import           Data.Monoid            ((<>))
 import           Data.ProtocolBuffers   hiding (field)
 import           Data.Serialize
 import qualified Data.Text.Lazy.Builder as LazyBuilder
+import           System.Timeout         (timeout)
 import           System.ZMQ4            hiding (source)
-import           Types
-import           System.Timeout               (timeout)
+import           Types.Chevalier
 
 -- | Chevalier communication thread, reads SourceQuery requsts from an mvar and
 -- replies over the included mvar.
@@ -28,7 +28,7 @@ chevalier chevalier_url query_mvar =
             response <- decodeChevalierResponse <$> receive s
             either error (return . buildSources) response
 
-        case result of 
+        case result of
             -- Timeout has triggered, we assume that the chevalier daemon has
             -- deadlocked or restarted so we need a new connection.
             --
@@ -48,20 +48,20 @@ chevalier chevalier_url query_mvar =
     buildSources r = map urlSafeSource (getField $ sources r)
 
     urlSafeSource s =
-        let tags = getField $ source s
-            builder = foldl f "" tags
+        let ts      = getField $ tags s
+            builder = foldl f "" ts
         in LazyBuilder.toLazyText builder
       where
-        f acc (ChevalierTag k v) = acc
+        f acc (SourceTag k v) = acc
             <> (LazyBuilder.fromText $ getField v)
             <> "~"
             <> (LazyBuilder.fromText $ getField k)
             <> ","
 
-    buildChevalierRequest (SourceQuery q page _ ) = ChevalierRequest
+    buildChevalierRequest (SourceQuery q page _ ) = SourceRequest
         { requestTags    = putField $ buildTags q
         , startPage      = putField $ Just $ fromIntegral page
         , sourcesPerPage = putField $ Just 64
         }
 
-    buildTags q = [ ChevalierTag { field = putField "*", value = putField q } ]
+    buildTags q = [ SourceTag { field = putField "*", value = putField q } ]
