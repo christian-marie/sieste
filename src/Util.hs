@@ -51,4 +51,6 @@ tagsOr400 text =
         v = putField <$> takeWhile1 (/= ',') <* (optional ",")
 
 
+lerp :: Double -> Double -> Double -> Double
+lerp a b alpha = ((1.0 - alpha) * a) + (alpha * b)
 
