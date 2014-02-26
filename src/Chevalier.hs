@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Chevalier where
 
-import           Control.Applicative
 import           Control.Concurrent
 import           Control.Exception
 import           Data.Monoid            ((<>))
@@ -25,8 +24,7 @@ chevalier chevalier_url query_mvar =
 
         result <- timeout chevalierTimeout . try $ do
             send s [] $ encodeChevalierRequest $ buildChevalierRequest query
-            response <- decodeChevalierResponse <$> receive s
-            either error (return . buildSources) response
+            receive s >>= decodeChevalierResponse
 
         case result of
             -- Timeout has triggered, we assume that the chevalier daemon has
@@ -39,7 +37,7 @@ chevalier chevalier_url query_mvar =
             -- and restart ourselves just incase
             Just either_result -> do
                 putMVar (sourceResponse query) either_result
-                case either_result of 
+                case either_result of
                     Left _ -> chevalier chevalier_url query_mvar
                     _      -> loop s
 
@@ -48,7 +46,13 @@ chevalier chevalier_url query_mvar =
 
     encodeChevalierRequest = runPut . encodeMessage
 
-    decodeChevalierResponse = runGet decodeMessage
+    decodeChevalierResponse bs = do
+        let decoded = runGet decodeMessage bs
+        parsed <- either (throwIO . BurstDecodeFailure) return decoded
+        let chevalier_error = getField $ chevalierError parsed
+        case chevalier_error of
+            Just e -> throwIO $ ChevalierFailure e
+            Nothing -> return $ buildSources parsed
 
     buildSources r = map urlSafeSource (getField $ sources r)
 

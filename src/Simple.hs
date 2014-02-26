@@ -95,6 +95,10 @@ interpolated readerd_mvar = do
         compareByTime frame_a frame_b = compare (ts frame_a) (ts frame_b)
         ts = getField . timestamp
 
+    jsonEncode = do
+        burst <- encode . toJSON <$> await
+        yield burst
+
     -- We want to prepend all but the first burst with a comma.
     addCommas is_first
         | is_first  = await >> addCommas False
@@ -102,10 +106,6 @@ interpolated readerd_mvar = do
             burst <- await
             yield $ LB.append "," burst
             addCommas False
-
-    jsonEncode = do
-        burst <- encode . toJSON <$> await
-        yield burst
 
 toInt :: Integral a => ByteString -> a
 toInt bs = maybe 0 (fromIntegral . fst) (B.readInteger bs)
