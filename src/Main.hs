@@ -23,8 +23,8 @@ main = do
     let start_readerd = readerd readerd_url readerd_query_mvar
 
 
-    chevalier_threads <- replicateM 10 $ async start_chevalier
-    readerd_threads   <- replicateM 10 $ async start_readerd
+    chevalier_threads <- replicateM 16 $ async start_chevalier
+    readerd_threads   <- replicateM 16 $ async start_readerd
 
     async $ watchThreads chevalier_threads start_chevalier
     async $ watchThreads readerd_threads start_readerd
