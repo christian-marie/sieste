@@ -2,28 +2,29 @@
 module Simple where
 
 import           Control.Applicative
-import Data.Monoid((<>))
-import Control.Monad(forever)
-import           Control.Concurrent hiding (yield)
+import           Control.Concurrent           hiding (yield)
+import           Control.Monad                (forever)
 import           Control.Monad.IO.Class
+import           Data.Aeson                   (encode, toJSON)
+import           Data.Attoparsec.Text         (parseOnly, takeWhile1, (<*.))
+import           Data.ByteString              (ByteString)
 import qualified Data.ByteString.Char8        as B
-import qualified Data.ByteString.Lazy        as LB
-import Data.ByteString(ByteString)
+import qualified Data.ByteString.Lazy         as LB
 import           Data.ByteString.Lazy.Builder (string7)
+import           Data.List                    (sortBy)
 import           Data.Maybe
+import           Data.Monoid                  ((<>))
+import           Data.ProtocolBuffers         (getField, putField)
+import           Pipes
+import           Pipes.Concurrent
 import           Snap.Core
 import           System.Timeout               (timeout)
 import           Types.Chevalier              (SourceQuery (..))
-import           Types.ReaderD (DataBurst (..), Range (..), RangeQuery (..),
-                                SourceTag (..), DataFrame(..))
-import Data.List(sortBy)
-import Data.ProtocolBuffers(putField, getField)
+import           Types.ReaderD                (DataBurst (..), DataFrame (..),
+                                               Range (..), RangeQuery (..),
+                                               SourceTag (..))
 import           Util                         (logException, utf8Or400,
                                                writeError, writeJSON)
-import Data.Attoparsec.Text(takeWhile1, parseOnly, (<*.))
-import Data.Aeson(encode, toJSON)
-import Pipes
-import Pipes.Concurrent
 
 simpleSearch :: MVar SourceQuery -> Snap ()
 simpleSearch chevalier_mvar = do
@@ -67,7 +68,7 @@ interpolated readerd_mvar = do
             writeError 400 $ string7 "failed to parse source: " <> string7 e
         Right s ->
             return s
-    
+
     input <- liftIO $ do
         (output, input) <- spawn Single
         putMVar readerd_mvar $ RangeQuery tags start end output
@@ -79,7 +80,7 @@ interpolated readerd_mvar = do
                      >-> unRange
                      >-> sortBurst
                      >-> jsonEncode
-                     >-> addCommas True) 
+                     >-> addCommas True)
                     (lift . writeLBS)
     writeBS "]"
   where
@@ -94,7 +95,7 @@ interpolated readerd_mvar = do
         case range of Burst b -> yield b >> unRange
                       Done -> return ()
 
-    -- Sort the DataBurst by time, passing on a list of DataFrames 
+    -- Sort the DataBurst by time, passing on a list of DataFrames
     sortBurst = do
         unsorted <- getField . frames <$> await
         yield $ sortBy compareByTime unsorted
@@ -110,7 +111,7 @@ interpolated readerd_mvar = do
             burst <- await
             yield $ LB.append "," burst
             addCommas False
-        
+
     jsonEncode = do
         burst <- encode . toJSON <$> await
         yield burst
