@@ -29,11 +29,12 @@ readerd readerd_url query_mvar =
     rangeQueryToRequestMulti RangeQuery{..} =
       let requests = [RequestSource tags start end]
           tags     = putField rangeSource
-          start    = putField $ fromIntegral $ rangeStart
+          start    = putField $ fromIntegral rangeStart
           end      = putField $ Just $ fromIntegral rangeEnd
       in encodeRequestMulti $ RequestMulti $ putField requests
 
     encodeRequestMulti = runPut . encodeMessage
+
     yieldRanges s = do
         either_msg <- lift . try $ do
             result <- poll readerdTimeout [Sock s [In] Nothing]
@@ -52,9 +53,11 @@ readerd readerd_url query_mvar =
                 then yield $ Right Done
                 -- If the burst cannot be decoded, we may as well give up,
                 -- chances are someone is talking the wrong protocol
-                else yield $ either (Left . toException . BurstDecodeFailure)
-                                    (Right . Burst)
-                                    (decodeBurst msg)
+                else case decodeBurst msg of
+                    Left e  -> yield $ Left $ toException $ BurstDecodeFailure e
+                    Right b ->  do
+                        yield $ Right $ Burst b
+                        yieldRanges s
 
     decodeBurst = runGet decodeMessage
 

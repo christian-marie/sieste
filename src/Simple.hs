@@ -1,4 +1,5 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Simple where
 
@@ -14,14 +15,15 @@ import           Data.ByteString.Lazy.Builder (string7)
 import           Data.List                    (sortBy)
 import           Data.Maybe
 import           Data.ProtocolBuffers         (getField)
+import           Data.Word                    (Word64)
 import           Pipes
 import           Pipes.Concurrent
 import           Snap.Core
 import           System.Timeout               (timeout)
 import           Types.Chevalier              (SourceQuery (..))
 import           Types.ReaderD                (DataBurst (..), DataFrame (..),
-                                               Range (..), RangeQuery (..))
-import Data.Word(Word64)
+                                               Range (..), RangeQuery (..),
+                                               ValueType (..))
 import           Util
 
 simpleSearch :: MVar SourceQuery -> Snap ()
@@ -68,19 +70,24 @@ interpolated readerd_mvar = do
         putMVar readerd_mvar $ RangeQuery tags start end output
         return input
 
+    modifyResponse $ setContentType "application/json"
+    modifyResponse $ setBufferingMode False
     writeBS "["
     runEffect $ for (fromInput input
                      >-> logExceptions
                      >-> unRange
                      >-> sortBurst
-                     >-> interpolate interval (fromIntegral start + interval)
+                     >-> interpolate interval (fromIntegral start)
                      >-> jsonEncode
                      >-> addCommas True)
                     (lift . writeLBS)
     writeBS "]"
   where
-    fromEpoch :: Word64 -> Word64
+    fromEpoch :: Int -> Word64
     fromEpoch = fromIntegral . (* 1000000000)
+
+    toEpoch :: Word64 -> Int
+    toEpoch = fromIntegral . (`div` 1000000000)
     -- Pipes are chained from top to bottom:
 
     -- Log exceptions, pass on Ranges
@@ -100,7 +107,7 @@ interpolated readerd_mvar = do
       where
         compareByTime frame_a frame_b = compare (ts frame_a) (ts frame_b)
         ts = getField . timestamp
-    
+
     interpolate interval now = do
         -- On our first run, we have to find an initial value to interpolate
         -- from.
@@ -113,7 +120,7 @@ interpolated readerd_mvar = do
         --         a value for
         -- p    - last known data point
         -- p:ps - next data points
-        emitAt :: Word64 -> DataFrame -> [DataFrame] -> Pipe [DataFrame] Int Snap ()
+        emitAt :: Monad m => Word64 -> DataFrame -> [DataFrame] -> Pipe [DataFrame] (Int, Double) m ()
         emitAt t p (p':ps) = do
             let p_time = getTime p
             if p_time < t
@@ -125,9 +132,17 @@ interpolated readerd_mvar = do
                     if p'_time > t
                         then do
                             -- Obviously we have a match now and we can emit
-                            -- this value
-                            yield 42
-                            -- interp (getValue p) (getValue p') ((t - p'_time) / (p_time - p'_time))
+                            -- this value. We go for Rational precision here as
+                            -- we may be dealing with Word64s and I'm not sure
+                            -- what kind of use cases we are dealing with.
+                            --
+                            -- If this turns out to be slow, we can use
+                            -- Doubles.
+                            let smalld = toRational $ p'_time - p_time
+                            let bigd   = toRational $ p'_time - t
+                            let lerped = lerp (getValue p) (getValue p') (smalld / bigd)
+                            yield (toEpoch t, fromRational lerped)
+
                             -- Now look for the next interval
                             emitAt (t + interval) p (p':ps)
                         else
@@ -136,14 +151,14 @@ interpolated readerd_mvar = do
                 else
                     -- This case should only be hit until our requested time
                     -- catches up to our first data point
-                    emitAt t p (p':ps)
+                    emitAt (t + interval) p (p':ps)
 
         -- End of input, request another chunk
         emitAt t p [] = await >>= emitAt t p
 
         getTime :: DataFrame -> Word64
         getTime = fromIntegral . getField . timestamp
-            
+
 
     jsonEncode = (encode . toJSON <$> await) >>= yield
 
@@ -154,6 +169,11 @@ interpolated readerd_mvar = do
             burst <- await
             yield $ LB.append "," burst
             addCommas False
+
+getValue :: DataFrame -> Rational
+getValue DataFrame{..}
+    | getField payload == NUMBER = toRational $ fromJust $ getField valueNumeric
+    | getField payload == REAL   = toRational $ fromJust $ getField valueMeasurement
 
 toInt :: Integral a => ByteString -> a
 toInt bs = maybe 0 (fromIntegral . fst) (B.readInteger bs)

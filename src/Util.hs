@@ -50,7 +50,6 @@ tagsOr400 text =
         k = putField <$> takeWhile1 (/= '~') <*. "~"
         v = putField <$> takeWhile1 (/= ',') <* (optional ",")
 
-
-lerp :: Double -> Double -> Double -> Double
+lerp :: Rational -> Rational -> Rational -> Rational
 lerp a b alpha = ((1.0 - alpha) * a) + (alpha * b)
 
