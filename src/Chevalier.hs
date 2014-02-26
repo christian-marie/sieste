@@ -35,8 +35,13 @@ chevalier chevalier_url query_mvar =
             -- The code that is waiting for a response over the response mvar
             -- has a timeout also, which is shorter and has already triggered.
             Nothing -> chevalier chevalier_url query_mvar
-            -- Otherwise we have a response, error or not.
-            Just result' -> putMVar (sourceResponse query) result'
+            -- Otherwise we have a response, if it's an error, we pass it along
+            -- and restart ourselves just incase
+            Just either_result -> do
+                putMVar (sourceResponse query) either_result
+                case either_result of 
+                    Left _ -> chevalier chevalier_url query_mvar
+                    _      -> loop s
 
 
     chevalierTimeout = 60000000 -- 60s
