@@ -82,8 +82,6 @@ interpolated readerd_mvar = do
                      >-> addCommas True) 
                     (lift . writeLBS)
     writeBS "]"
-
-    writeBS $ B.pack $ show tags
   where
     -- Pipes are chained from top to bottom:
 

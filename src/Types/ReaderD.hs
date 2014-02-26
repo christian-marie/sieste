@@ -33,7 +33,7 @@ data Range = Burst DataBurst | Done
 -- Custom exceptions
 
 data ReaderDException = BurstDecodeFailure String
-                      | RetriesExceeded
+                      | ZMQTimeout
     deriving (Show, Typeable)
 instance Exception ReaderDException
 

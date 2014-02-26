@@ -15,7 +15,6 @@ import           Types.ReaderD
 readerd :: String -> MVar RangeQuery -> IO ()
 readerd readerd_url query_mvar =
     withContext $ \c -> withSocket c Dealer $ \s -> do
-        setReceiveTimeout readerdTimeout s
         connect s readerd_url
         forever $ do
             q@(RangeQuery _ _ _ output) <- takeMVar query_mvar
@@ -34,15 +33,18 @@ readerd readerd_url query_mvar =
 
     encodeRequestMulti = runPut . encodeMessage
     yieldRanges s = do
-        either_msg <- lift . try $ receive s
+        either_msg <- lift . try $ do
+            result <- poll readerdTimeout [Sock s [In] Nothing]
+            if (null . head) result
+                then throwIO ZMQTimeout -- timeout, bail
+                else receive s
         case either_msg of
             -- On failure, pass the exception on and give up, more robust
             -- handling can be evaluated when we start to uncover handleable
             -- exceptions.
             Left e -> do
                 yield $ Left e
-            Right msg ->
-                if B.null msg
+            Right msg -> if B.null msg
                 then yield $ Right Done
                 -- If the burst cannot be decoded, we may as well give up,
                 -- chances are someone is talking the wrong protocol
@@ -52,4 +54,4 @@ readerd readerd_url query_mvar =
 
     decodeBurst = runGet decodeMessage
 
-    readerdTimeout = restrict (30000 :: Int) -- 30 seconds
+    readerdTimeout = 30000 -- 30 seconds
