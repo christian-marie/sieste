@@ -6,25 +6,21 @@ import           Control.Concurrent           hiding (yield)
 import           Control.Monad                (forever)
 import           Control.Monad.IO.Class
 import           Data.Aeson                   (encode, toJSON)
-import           Data.Attoparsec.Text         (parseOnly, takeWhile1, (<*.))
 import           Data.ByteString              (ByteString)
 import qualified Data.ByteString.Char8        as B
 import qualified Data.ByteString.Lazy         as LB
 import           Data.ByteString.Lazy.Builder (string7)
 import           Data.List                    (sortBy)
 import           Data.Maybe
-import           Data.Monoid                  ((<>))
-import           Data.ProtocolBuffers         (getField, putField)
+import           Data.ProtocolBuffers         (getField)
 import           Pipes
 import           Pipes.Concurrent
 import           Snap.Core
 import           System.Timeout               (timeout)
 import           Types.Chevalier              (SourceQuery (..))
 import           Types.ReaderD                (DataBurst (..), DataFrame (..),
-                                               Range (..), RangeQuery (..),
-                                               SourceTag (..))
-import           Util                         (logException, utf8Or400,
-                                               writeError, writeJSON)
+                                               Range (..), RangeQuery (..))
+import           Util
 
 simpleSearch :: MVar SourceQuery -> Snap ()
 simpleSearch chevalier_mvar = do
@@ -60,14 +56,9 @@ interpolated readerd_mvar = do
     --
     -- This allows us to stream the data the user chunk by chunk.
 
-    sauce <- utf8Or400 =<< fromJust <$> getParam "source"
+    tags <- tagsOr400 =<< utf8Or400 =<< fromJust <$> getParam "source"
     start <- toInt <$> fromMaybe "0" <$> getParam "start"
     end <- toInt <$> fromMaybe "0" <$> getParam "end"
-    tags <- case parseOnly tagParser sauce of
-        Left e ->
-            writeError 400 $ string7 "failed to parse source: " <> string7 e
-        Right s ->
-            return s
 
     input <- liftIO $ do
         (output, input) <- spawn Single
@@ -115,11 +106,6 @@ interpolated readerd_mvar = do
     jsonEncode = do
         burst <- encode . toJSON <$> await
         yield burst
-
-    tagParser = some $ SourceTag <$> k <*> v
-      where
-        k = putField <$> takeWhile1 (/= '~') <*. "~"
-        v = putField <$> takeWhile1 (/= ',') <* (optional ",")
 
 toInt :: Integral a => ByteString -> a
 toInt bs = maybe 0 (fromIntegral . fst) (B.readInteger bs)
