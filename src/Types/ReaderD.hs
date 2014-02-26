@@ -34,6 +34,7 @@ data Range = Burst DataBurst | Done
 
 data ReaderDException = BurstDecodeFailure String
                       | ZMQTimeout
+                      | DecompressionFailure
     deriving (Show, Typeable)
 instance Exception ReaderDException
 

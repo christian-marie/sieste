@@ -33,6 +33,7 @@ Executable vaultaire-rest
     attoparsec,
     pipes-concurrency,
     scientific,
+    lz4,
     protobuf
 
   if impl(ghc >= 6.12.0)

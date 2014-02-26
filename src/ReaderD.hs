@@ -1,15 +1,17 @@
 {-# LANGUAGE RecordWildCards #-}
 module ReaderD where
 
-import           Control.Concurrent   hiding (yield)
+import           Codec.Compression.LZ4 (decompress)
+import           Control.Applicative   ((<$>))
+import           Control.Concurrent    hiding (yield)
 import           Control.Exception
-import           Control.Monad        (forever)
-import qualified Data.ByteString      as B
-import           Data.ProtocolBuffers hiding (field)
-import           Data.Serialize       (runGet, runPut)
+import           Control.Monad         (forever)
+import qualified Data.ByteString       as B
+import           Data.ProtocolBuffers  hiding (field)
+import           Data.Serialize        (runGet, runPut)
 import           Pipes
-import           Pipes.Concurrent     (performGC, toOutput)
-import           System.ZMQ4          hiding (source)
+import           Pipes.Concurrent      (performGC, toOutput)
+import           System.ZMQ4           hiding (source)
 import           Types.ReaderD
 
 readerd :: String -> MVar RangeQuery -> IO ()
@@ -37,7 +39,9 @@ readerd readerd_url query_mvar =
             result <- poll readerdTimeout [Sock s [In] Nothing]
             if (null . head) result
                 then throwIO ZMQTimeout -- timeout, bail
-                else receive s
+                else decompress <$> receive s
+                     >>= maybe (throwIO DecompressionFailure) return 
+
         case either_msg of
             -- On failure, pass the exception on and give up, more robust
             -- handling can be evaluated when we start to uncover handleable
