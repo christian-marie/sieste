@@ -120,16 +120,16 @@ interpolated readerd_mvar = do
         --         a value for
         -- p    - last known data point
         -- p:ps - next data points
-        emitAt :: Monad m => Word64 -> DataFrame -> [DataFrame] -> Pipe [DataFrame] (Int, Double) m ()
+        emitAt :: Word64 -> DataFrame -> [DataFrame] -> Pipe [DataFrame] (Int, Double) Snap ()
         emitAt t p (p':ps) = do
             let p_time = getTime p
-            if p_time < t
+            if p_time <= t
                 then
                     -- If the next point is beyond the requested_time, we can
                     -- interpolate its value. If not, we need to look further
                     -- forward in the list
                     let p'_time = getTime p' in
-                    if p'_time > t
+                    if p'_time >= t
                         then do
                             -- Obviously we have a match now and we can emit
                             -- this value. We go for Rational precision here as
@@ -140,15 +140,20 @@ interpolated readerd_mvar = do
                             -- Doubles.
                             let smalld = toRational $ p'_time - p_time
                             let bigd   = toRational $ p'_time - t
-                            let lerped = lerp (getValue p) (getValue p') (smalld / bigd)
+                            let alpha  = if p'_time == t
+                                            then 0
+                                            else if p_time == t
+                                                    then 1
+                                                    else smalld / bigd
+                            let lerped = lerp (getValue p) (getValue p') alpha
                             yield (toEpoch t, fromRational lerped)
 
                             -- Now look for the next interval
                             emitAt (t + interval) p (p':ps)
-                        else
+                        else do
                             -- Seek forward
                             emitAt t p' ps
-                else
+                else do
                     -- This case should only be hit until our requested time
                     -- catches up to our first data point
                     emitAt (t + interval) p (p':ps)
@@ -160,11 +165,11 @@ interpolated readerd_mvar = do
         getTime = fromIntegral . getField . timestamp
 
 
-    jsonEncode = (encode . toJSON <$> await) >>= yield
+    jsonEncode = (encode . toJSON <$> await) >>= yield >> jsonEncode
 
     -- We want to prepend all but the first burst with a comma.
     addCommas is_first
-        | is_first  = await >> addCommas False
+        | is_first  = await >>= yield >> addCommas False
         | otherwise = do
             burst <- await
             yield $ LB.append "," burst
@@ -174,6 +179,7 @@ getValue :: DataFrame -> Rational
 getValue DataFrame{..}
     | getField payload == NUMBER = toRational $ fromJust $ getField valueNumeric
     | getField payload == REAL   = toRational $ fromJust $ getField valueMeasurement
+    | otherwise                  = error "Unhandled data burst type"
 
 toInt :: Integral a => ByteString -> a
 toInt bs = maybe 0 (fromIntegral . fst) (B.readInteger bs)
