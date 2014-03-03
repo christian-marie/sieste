@@ -1,18 +1,18 @@
 {-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE PatternGuards       #-}
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Simple where
 
 import           Control.Applicative
 import           Control.Concurrent           hiding (yield)
-import           Control.Monad                (forever)
+import           Control.Monad                (forever, unless)
 import           Control.Monad.IO.Class
 import           Data.Aeson                   (encode, toJSON)
 import           Data.ByteString              (ByteString)
 import qualified Data.ByteString.Char8        as B
 import qualified Data.ByteString.Lazy         as LB
 import           Data.ByteString.Lazy.Builder (string7)
-import           Data.List                    (sortBy)
 import           Data.Maybe
 import           Data.ProtocolBuffers         (getField)
 import           Data.Word                    (Word64)
@@ -63,7 +63,9 @@ interpolated readerd_mvar = do
     tags <- tagsOr400 =<< utf8Or400 =<< fromJust <$> getParam "source"
     start <- fromEpoch . toInt <$> fromMaybe "0" <$> getParam "start"
     end <- fromEpoch . toInt <$> fromMaybe "0" <$> getParam "end"
-    interval <- toInt <$> fromMaybe "0" <$> getParam "interval"
+    interval <- fromEpoch . toInt <$> fromMaybe "60" <$> getParam "interval"
+    unless (interval > 0) $ writeError 400 $ string7 "interval must be > 0"
+
     maybe_origin <- getParam "origin"
 
     origin <- case maybe_origin of
@@ -80,8 +82,8 @@ interpolated readerd_mvar = do
     runEffect $ for (fromInput input
                      >-> logExceptions
                      >-> unRange
-                     >-> sortBurst
-                     >-> interpolate interval (fromIntegral start)
+                     >-> extractFrames
+                     >-> interpolate interval (fromIntegral start) (fromIntegral end)
                      >-> jsonEncode
                      >-> addCommas True)
                     (lift . writeLBS)
@@ -104,65 +106,63 @@ interpolated readerd_mvar = do
                       Done -> return ()
 
     -- Sort the DataBurst by time, passing on a list of DataFrames
-    sortBurst = do
-        unsorted <- getField . frames <$> await
-        yield $ sortBy compareByTime unsorted
-        sortBurst
-      where
-        compareByTime frame_a frame_b = compare (ts frame_a) (ts frame_b)
-        ts = getField . timestamp
+    extractFrames =
+        getField . frames <$> await >>= yield
 
-    interpolate interval now = do
-        -- On our first run, we have to find an initial value to interpolate
-        -- from.
-        ps <- await
-        case ps of
-            (p:ps') -> emitAt now p ps'
-            _      -> interpolate interval now
+    interpolate interval now end
+        | interval <= 0 = error "interval <= 0"
+        | now > end = error "now > end"
+        | otherwise = do
+            -- On our first run, we have to find an initial value to interpolate
+            -- from.
+            ps <- await
+            case ps of
+                (p:ps') -> emitAt now p ps'
+                _       -> interpolate interval now end
       where
         -- t    - the current interpolated target time we are trying to emit
         --         a value for
         -- p    - last known data point
         -- p:ps - next data points
         emitAt :: Word64 -> DataFrame -> [DataFrame] -> Pipe [DataFrame] (Int, Double) Snap ()
-        emitAt t p (p':ps) = do
-            let p_time = getTime p
-            if p_time <= t
-                then
-                    -- If the next point is beyond the requested_time, we can
-                    -- interpolate its value. If not, we need to look further
-                    -- forward in the list
-                    let p'_time = getTime p' in
-                    if p'_time >= t
-                        then do
-                            -- Obviously we have a match now and we can emit
-                            -- this value. We go for Rational precision here as
-                            -- we may be dealing with Word64s and I'm not sure
-                            -- what kind of use cases we are dealing with.
-                            --
-                            -- If this turns out to be slow, we can use
-                            -- Doubles.
-                            let smalld = toRational $ p'_time - p_time
-                            let bigd   = toRational $ p'_time - t
-                            let alpha  = if p'_time == t
-                                            then 0
-                                            else if p_time == t
-                                                    then 1
-                                                    else smalld / bigd
-                            let lerped = lerp (getValue p) (getValue p') alpha
-                            yield (toEpoch t, fromRational lerped)
+        emitAt t p (p':ps)
+            | t > end = return ()
+            | p_time <- getTime p, p_time <= t =
+                        -- If the next point is beyond the requested_time, we can
+                        -- interpolate its value. If not, we need to look further
+                        -- forward in the list
+                        let p'_time = getTime p' in
+                        if p'_time >= t
+                            then do
+                                -- Obviously we have a match now and we can emit
+                                -- this value. We go for Rational precision here as
+                                -- we may be dealing with Word64s and I'm not sure
+                                -- what kind of use cases we are dealing with.
+                                --
+                                -- If this turns out to be slow, we can use
+                                -- Doubles.
+                                let smalld = toRational $ p'_time - p_time
+                                let bigd   = toRational $ p'_time - t
+                                let alpha  = if p'_time == t
+                                                then 0
+                                                else if p_time == t
+                                                        then 1
+                                                        else bigd / smalld
+                                let lerped = lerp (getValue p) (getValue p') alpha
+                                yield (toEpoch t, fromRational lerped)
 
-                            -- Now look for the next interval
-                            emitAt (t + interval) p (p':ps)
-                        else do
-                            -- Seek forward
-                            emitAt t p' ps
-                else do
+                                -- Now look for the next interval
+                                emitAt (t + interval) p (p':ps)
+                            else
+                                -- Seek forward
+                                emitAt t p' ps
+            | p_time <- getTime p, p_time > t =
                     -- This case should only be hit until our requested time
-                    -- catches up to our first data point
-                    emitAt (t + interval) p (p':ps)
+                    -- catches up to our first data point (modulus interval)
+                    let first = ((p_time `div` interval) + 1) * interval in
+                        emitAt first p (p':ps)
+            | otherwise = error "emitAt: impossible"
 
-        -- End of input, request another chunk
         emitAt t p [] = await >>= emitAt t p
 
         getTime :: DataFrame -> Word64
