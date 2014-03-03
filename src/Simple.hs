@@ -124,43 +124,44 @@ interpolated readerd_mvar = do
         --         a value for
         -- p    - last known data point
         -- p:ps - next data points
-        emitAt :: Word64 -> DataFrame -> [DataFrame] -> Pipe [DataFrame] (Int, Double) Snap ()
+        emitAt :: Word64 -> DataFrame -> [DataFrame]
+               -> Pipe [DataFrame] (Int, Double) Snap ()
         emitAt t p (p':ps)
             | t > end = return ()
             | p_time <- getTime p, p_time <= t =
-                        -- If the next point is beyond the requested_time, we can
-                        -- interpolate its value. If not, we need to look further
-                        -- forward in the list
-                        let p'_time = getTime p' in
-                        if p'_time >= t
-                            then do
-                                -- Obviously we have a match now and we can emit
-                                -- this value. We go for Rational precision here as
-                                -- we may be dealing with Word64s and I'm not sure
-                                -- what kind of use cases we are dealing with.
-                                --
-                                -- If this turns out to be slow, we can use
-                                -- Doubles.
-                                let smalld = toRational $ p'_time - p_time
-                                let bigd   = toRational $ p'_time - t
-                                let alpha  = if p'_time == t
-                                                then 0
-                                                else if p_time == t
-                                                        then 1
-                                                        else bigd / smalld
-                                let lerped = lerp (getValue p') (getValue p) alpha
-                                yield (toEpoch t, fromRational lerped)
+                -- If the next point is beyond the requested_time, we can
+                -- interpolate its value. If not, we need to look further
+                -- forward in the list
+                let p'_time = getTime p' in
+                if p'_time >= t
+                    then do
+                        -- Obviously we have a match now and we can emit
+                        -- this value. We go for Rational precision here as
+                        -- we may be dealing with Word64s and I'm not sure
+                        -- what kind of use cases we are dealing with.
+                        --
+                        -- If this turns out to be slow, we can use
+                        -- Doubles.
+                        let smalld = toRational $ p'_time - p_time
+                        let bigd   = toRational $ p'_time - t
+                        let alpha  = if p'_time == t
+                                        then 0
+                                        else if p_time == t
+                                                then 1
+                                                else bigd / smalld
+                        let lerped = lerp (getValue p') (getValue p) alpha
+                        yield (toEpoch t, fromRational lerped)
 
-                                -- Now look for the next interval
-                                emitAt (t + interval) p (p':ps)
-                            else
-                                -- Seek forward
-                                emitAt t p' ps
+                        -- Now look for the next interval
+                        emitAt (t + interval) p (p':ps)
+                    else
+                        -- Seek forward
+                        emitAt t p' ps
             | p_time <- getTime p, p_time > t =
-                    -- This case should only be hit until our requested time
-                    -- catches up to our first data point (modulus interval)
-                    let first = ((p_time `div` interval) + 1) * interval in
-                        emitAt first p (p':ps)
+                -- This case should only be hit until our requested time
+                -- catches up to our first data point (modulus interval)
+                let first = ((p_time `div` interval) + 1) * interval in
+                    emitAt first p (p':ps)
             | otherwise = error "emitAt: impossible"
 
         emitAt t p [] = await >>= emitAt t p
