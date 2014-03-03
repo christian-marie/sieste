@@ -148,7 +148,7 @@ interpolated readerd_mvar = do
                                                 else if p_time == t
                                                         then 1
                                                         else bigd / smalld
-                                let lerped = lerp (getValue p) (getValue p') alpha
+                                let lerped = lerp (getValue p') (getValue p) alpha
                                 yield (toEpoch t, fromRational lerped)
 
                                 -- Now look for the next interval
