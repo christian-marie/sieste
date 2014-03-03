@@ -9,6 +9,7 @@ import           Control.Monad         (forever)
 import qualified Data.ByteString       as B
 import           Data.ProtocolBuffers  hiding (field)
 import           Data.Serialize        (runGet, runPut)
+import           Data.Text.Encoding    (encodeUtf8)
 import           Pipes
 import           Pipes.Concurrent      (performGC, toOutput)
 import           System.ZMQ4           hiding (source)
@@ -19,8 +20,9 @@ readerd readerd_url query_mvar =
     withContext $ \c -> withSocket c Dealer $ \s -> do
         connect s readerd_url
         forever $ do
-            q@(RangeQuery _ _ _ output) <- takeMVar query_mvar
+            q@(RangeQuery _ _ _ origin output) <- takeMVar query_mvar
             let request = rangeQueryToRequestMulti q
+            send s [SendMore] $ encodeUtf8 origin
             send s [] request
 
             runEffect $ yieldRanges s >-> toOutput output
@@ -41,7 +43,7 @@ readerd readerd_url query_mvar =
             if (null . head) result
                 then throwIO ZMQTimeout -- timeout, bail
                 else decompress <$> receive s
-                     >>= maybe (throwIO DecompressionFailure) return 
+                     >>= maybe (throwIO DecompressionFailure) return
 
         case either_msg of
             -- On failure, pass the exception on and give up, more robust

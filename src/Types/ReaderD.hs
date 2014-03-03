@@ -26,6 +26,7 @@ data RangeQuery = RangeQuery
     { rangeSource :: [SourceTag]
     , rangeStart  :: Word64
     , rangeEnd    :: Word64
+    , rangeOrigin :: Text
     , rangeOutput :: Output (Either SomeException Range) }
 
 data Range = Burst DataBurst | Done

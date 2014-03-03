@@ -64,14 +64,18 @@ interpolated readerd_mvar = do
     start <- fromEpoch . toInt <$> fromMaybe "0" <$> getParam "start"
     end <- fromEpoch . toInt <$> fromMaybe "0" <$> getParam "end"
     interval <- toInt <$> fromMaybe "0" <$> getParam "interval"
+    maybe_origin <- getParam "origin"
+
+    origin <- case maybe_origin of
+        Just bs -> utf8Or400 bs
+        Nothing -> writeError 400 $ string7 "Must specify 'origin'"
 
     input <- liftIO $ do
         (output, input) <- spawn Single
-        putMVar readerd_mvar $ RangeQuery tags start end output
+        putMVar readerd_mvar $ RangeQuery tags start end origin output
         return input
 
     modifyResponse $ setContentType "application/json"
-    modifyResponse $ setBufferingMode False
     writeBS "["
     runEffect $ for (fromInput input
                      >-> logExceptions
