@@ -1,29 +1,25 @@
 {-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE PatternGuards       #-}
-{-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Simple where
 
 import           Control.Applicative
 import           Control.Concurrent           hiding (yield)
-import           Control.Monad                (forever, unless)
+import           Control.Monad                (forever)
 import           Control.Monad.IO.Class
 import           Data.Aeson                   (encode, toJSON)
 import           Data.ByteString              (ByteString)
 import qualified Data.ByteString.Char8        as B
 import qualified Data.ByteString.Lazy         as LB
-import           Data.ByteString.Lazy.Builder (string7)
+import           Data.ByteString.Lazy.Builder (stringUtf8)
 import           Data.Maybe
 import           Data.ProtocolBuffers         (getField)
-import           Data.Word                    (Word64)
 import           Pipes
 import           Pipes.Concurrent
 import           Snap.Core
 import           System.Timeout               (timeout)
 import           Types.Chevalier              (SourceQuery (..))
-import           Types.ReaderD                (DataBurst (..), DataFrame (..),
-                                               Range (..), RangeQuery (..),
-                                               ValueType (..))
+import           Types.ReaderD                (DataBurst (..), Range (..),
+                                               RangeQuery (..))
 import           Util
 
 simpleSearch :: MVar SourceQuery -> Snap ()
@@ -43,12 +39,12 @@ simpleSearch chevalier_mvar = do
 
     chevalierError e = do
         logException e
-        writeError 500 $ string7 "Exception talking to chevalier backend"
+        writeError 500 $ stringUtf8 "Exception talking to chevalier backend"
 
     timeoutError = do
         let msg = "Timed out talking to chevalier backend"
         logException msg
-        writeError 500 $ string7 msg
+        writeError 500 $ stringUtf8 msg
 
 interpolated :: MVar RangeQuery -> Snap ()
 interpolated readerd_mvar = do
@@ -61,16 +57,19 @@ interpolated readerd_mvar = do
     -- This allows us to stream the data the user chunk by chunk.
 
     tags <- tagsOr400 =<< utf8Or400 =<< fromJust <$> getParam "source"
-    start <- fromEpoch . toInt <$> fromMaybe "0" <$> getParam "start"
-    end <- fromEpoch . toInt <$> fromMaybe "0" <$> getParam "end"
-    interval <- fromEpoch . toInt <$> fromMaybe "60" <$> getParam "interval"
-    unless (interval > 0) $ writeError 400 $ string7 "interval must be > 0"
 
-    maybe_origin <- getParam "origin"
+    end <- getParam "end"
+        >>= validateW64 (> 0) "end must be > 0" timeNow
 
-    origin <- case maybe_origin of
+    start <- getParam "start"
+          >>= validateW64 (< end) "start must be < end" (return $ end - 86400)
+
+    interval <- getParam "interval"
+             >>= validateW64 (> 0)  "interval must be > 0" (return 60)
+
+    origin <- getParam "origin" >>= (\o -> case o of
         Just bs -> utf8Or400 bs
-        Nothing -> writeError 400 $ string7 "Must specify 'origin'"
+        Nothing -> writeError 400 $ stringUtf8 "Must specify 'origin'")
 
     input <- liftIO $ do
         (output, input) <- spawn Single
@@ -82,19 +81,20 @@ interpolated readerd_mvar = do
     runEffect $ for (fromInput input
                      >-> logExceptions
                      >-> unRange
-                     >-> extractFrames
+                     >-> extractBursts
                      >-> interpolate interval (fromIntegral start) (fromIntegral end)
                      >-> jsonEncode
                      >-> addCommas True)
                     (lift . writeLBS)
     writeBS "]"
   where
-    fromEpoch :: Int -> Word64
-    fromEpoch = fromIntegral . (* 1000000000)
-
-    toEpoch :: Word64 -> Int
-    toEpoch = fromIntegral . (`div` 1000000000)
-    -- Pipes are chained from top to bottom:
+    validateW64 check error_msg def user_input =
+        case user_input of
+            Just bs -> do
+                let parsed = fromEpoch $ toInt bs
+                check parsed `orFail` error_msg
+                return parsed
+            Nothing -> def
 
     -- Log exceptions, pass on Ranges
     logExceptions = forever $ await >>= either (lift . logException) yield
@@ -106,69 +106,7 @@ interpolated readerd_mvar = do
                       Done -> return ()
 
     -- Sort the DataBurst by time, passing on a list of DataFrames
-    extractFrames =
-        getField . frames <$> await >>= yield
-
-    interpolate interval now end
-        | interval <= 0 = error "interval <= 0"
-        | now > end = error "now > end"
-        | otherwise = do
-            -- On our first run, we have to find an initial value to interpolate
-            -- from.
-            ps <- await
-            case ps of
-                (p:ps') -> emitAt now p ps'
-                _       -> interpolate interval now end
-      where
-        -- t    - the current interpolated target time we are trying to emit
-        --         a value for
-        -- p    - last known data point
-        -- p:ps - next data points
-        emitAt :: Word64 -> DataFrame -> [DataFrame]
-               -> Pipe [DataFrame] (Int, Double) Snap ()
-        emitAt t p (p':ps)
-            | t > end = return ()
-            | p_time <- getTime p, p_time <= t =
-                -- If the next point is beyond the requested_time, we can
-                -- interpolate its value. If not, we need to look further
-                -- forward in the list
-                let p'_time = getTime p' in
-                if p'_time >= t
-                    then do
-                        -- Obviously we have a match now and we can emit
-                        -- this value. We go for Rational precision here as
-                        -- we may be dealing with Word64s and I'm not sure
-                        -- what kind of use cases we are dealing with.
-                        --
-                        -- If this turns out to be slow, we can use
-                        -- Doubles.
-                        let smalld = toRational $ p'_time - p_time
-                        let bigd   = toRational $ p'_time - t
-                        let alpha  = if p'_time == t
-                                        then 0
-                                        else if p_time == t
-                                                then 1
-                                                else bigd / smalld
-                        let lerped = lerp (getValue p') (getValue p) alpha
-                        yield (toEpoch t, fromRational lerped)
-
-                        -- Now look for the next interval
-                        emitAt (t + interval) p (p':ps)
-                    else
-                        -- Seek forward
-                        emitAt t p' ps
-            | p_time <- getTime p, p_time > t =
-                -- This case should only be hit until our requested time
-                -- catches up to our first data point (modulus interval)
-                let first = ((p_time `div` interval) + 1) * interval in
-                    emitAt first p (p':ps)
-            | otherwise = error "emitAt: impossible"
-
-        emitAt t p [] = await >>= emitAt t p
-
-        getTime :: DataFrame -> Word64
-        getTime = fromIntegral . getField . timestamp
-
+    extractBursts = getField . frames <$> await >>= mapM_ yield
 
     jsonEncode = (encode . toJSON <$> await) >>= yield >> jsonEncode
 
@@ -179,12 +117,6 @@ interpolated readerd_mvar = do
             burst <- await
             yield $ LB.append "," burst
             addCommas False
-
-getValue :: DataFrame -> Rational
-getValue DataFrame{..}
-    | getField payload == NUMBER = toRational $ fromJust $ getField valueNumeric
-    | getField payload == REAL   = toRational $ fromJust $ getField valueMeasurement
-    | otherwise                  = error "Unhandled data burst type"
 
 toInt :: Integral a => ByteString -> a
 toInt bs = maybe 0 (fromIntegral . fst) (B.readInteger bs)

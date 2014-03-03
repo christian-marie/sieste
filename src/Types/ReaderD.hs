@@ -5,16 +5,12 @@
 module Types.ReaderD where
 
 import           Control.Exception
-import qualified Data.Aeson           as A
 import           Data.ByteString      (ByteString)
 import           Data.Int             (Int64)
-import           Data.Maybe           (fromJust)
 import           Data.ProtocolBuffers hiding (field)
-import qualified Data.Scientific      as S
 import           Data.Text            (Text)
 import           Data.Typeable
 import           Data.TypeLevel       (D1, D2, D3, D4, D5, D6, D7, D8)
-import qualified Data.Vector          as V
 import           Data.Word            (Word64)
 import           GHC.Generics         (Generic)
 import           Pipes.Concurrent
@@ -59,19 +55,6 @@ data DataFrame = DataFrame {
     valueBlob        :: Optional D7 (Value ByteString)
 } deriving (Generic, Eq, Show)
 instance Decode DataFrame
-instance A.ToJSON DataFrame where
-    toJSON DataFrame{..}
-        | getField payload == NUMBER = A.Array $ V.fromList
-            [ getEpoch
-            , A.Number $ S.scientific (fromIntegral $ fromJust $ getField valueNumeric)  1]
-        | getField payload == REAL = A.Array $ V.fromList
-            [ getEpoch
-            , A.Number $ S.fromFloatDigits $ fromJust $ getField valueMeasurement]
-        | otherwise = error "Unrepresentable DataFrame type"
-      where
-        getEpoch =
-            let epoch = (fromIntegral $ getField timestamp) `div` 1000000000
-            in  A.Number $ S.scientific epoch 1
 
 data DataBurst = DataBurst {
     frames :: Repeated D1 (Message DataFrame)
@@ -79,10 +62,10 @@ data DataBurst = DataBurst {
 instance Decode DataBurst
 
 data ValueType = EMPTY
-                 | NUMBER
-                 | REAL
-                 | TEXT
-                 | BINARY
+               | NUMBER
+               | REAL
+               | TEXT
+               | BINARY
   deriving (Enum, Generic, Show, Eq)
 
 instance Decode ValueType
