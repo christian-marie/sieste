@@ -7,6 +7,7 @@ import           Data.Monoid            ((<>))
 import           Data.ProtocolBuffers   hiding (field)
 import           Data.Serialize
 import           Data.Text.Encoding     (encodeUtf8)
+import qualified Data.Text.Lazy         as LT
 import qualified Data.Text.Lazy.Builder as LazyBuilder
 import           System.Timeout         (timeout)
 import           System.ZMQ4            hiding (source)
@@ -61,13 +62,16 @@ chevalier chevalier_url query_mvar =
     urlSafeSource s =
         let ts      = getField $ tags s
             builder = foldl f "" ts
-        in LazyBuilder.toLazyText builder
+        in removeTailComma $ LazyBuilder.toLazyText builder
       where
         f acc (SourceTag k v) = acc
             <> (LazyBuilder.fromText $ getField k)
             <> "~"
             <> (LazyBuilder.fromText $ getField v)
             <> ","
+        removeTailComma txt
+            | LT.last txt == ',' = LT.init txt
+            | otherwise          = txt
 
     buildChevalierRequest (SourceQuery q page _ _ ) = SourceRequest
         { requestTags    = putField $ buildTags q
