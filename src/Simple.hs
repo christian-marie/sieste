@@ -27,9 +27,13 @@ simpleSearch chevalier_mvar = do
     query <- utf8Or400 =<< fromMaybe "*" <$> getParam "q"
     page <- toInt <$> fromMaybe "0" <$> getParam "page"
 
+    origin <- getParam "origin" >>= (\o -> case o of
+        Just bs -> utf8Or400 bs
+        Nothing -> writeError 400 $ stringUtf8 "Must specify 'origin'")
+
     maybe_response <- liftIO $ do
         response_mvar <- newEmptyMVar
-        putMVar chevalier_mvar $ SourceQuery query page response_mvar
+        putMVar chevalier_mvar $ SourceQuery query page origin response_mvar
         timeout chevalierTimeout $ takeMVar response_mvar
 
     either_response <- maybe timeoutError return maybe_response

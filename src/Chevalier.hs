@@ -6,6 +6,7 @@ import           Control.Exception
 import           Data.Monoid            ((<>))
 import           Data.ProtocolBuffers   hiding (field)
 import           Data.Serialize
+import           Data.Text.Encoding     (encodeUtf8)
 import qualified Data.Text.Lazy.Builder as LazyBuilder
 import           System.Timeout         (timeout)
 import           System.ZMQ4            hiding (source)
@@ -23,6 +24,7 @@ chevalier chevalier_url query_mvar =
         query <- takeMVar query_mvar
 
         result <- timeout chevalierTimeout . try $ do
+            send s [SendMore] (encodeUtf8 $ sourceOrigin query)
             send s [] $ encodeChevalierRequest $ buildChevalierRequest query
             receive s >>= decodeChevalierResponse
 
@@ -67,7 +69,7 @@ chevalier chevalier_url query_mvar =
             <> (LazyBuilder.fromText $ getField k)
             <> ","
 
-    buildChevalierRequest (SourceQuery q page _ ) = SourceRequest
+    buildChevalierRequest (SourceQuery q page _ _ ) = SourceRequest
         { requestTags    = putField $ buildTags q
         , startPage      = putField $ Just $ fromIntegral page
         , sourcesPerPage = putField $ Just 64
