@@ -64,9 +64,9 @@ chevalier chevalier_url query_mvar =
         in LazyBuilder.toLazyText builder
       where
         f acc (SourceTag k v) = acc
-            <> (LazyBuilder.fromText $ getField v)
-            <> "~"
             <> (LazyBuilder.fromText $ getField k)
+            <> "~"
+            <> (LazyBuilder.fromText $ getField v)
             <> ","
 
     buildChevalierRequest (SourceQuery q page _ _ ) = SourceRequest
