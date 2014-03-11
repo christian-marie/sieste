@@ -70,8 +70,8 @@ chevalier chevalier_url query_mvar =
             <> (LazyBuilder.fromText $ getField v)
             <> ","
         removeTailComma txt
-            | LT.last txt == ',' = LT.init txt
-            | otherwise          = txt
+            | LT.null txt = txt
+            | otherwise   = LT.init txt
 
     buildChevalierRequest (SourceQuery q page _ _ ) = SourceRequest
         { requestTags    = putField $ buildTags q
