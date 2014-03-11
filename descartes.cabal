@@ -1,10 +1,10 @@
-Name:                vaultaire-rest
+Name:                descartes
 Version:             0.1
-Synopsis:            Project Synopsis Here
-Description:         Project Description Here
-License:             AllRightsReserved
-Author:              Author
-Maintainer:          maintainer@example.com
+Synopsis:            REST interface to vaultaire and chevalier
+Description:         REST interface to vaultaire and chevalier
+License:             BSD3
+Author:              christian@ponies.io
+Maintainer:          christian@ponies.io
 Stability:           Experimental
 Category:            Web
 Build-type:          Simple
