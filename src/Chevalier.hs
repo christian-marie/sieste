@@ -6,9 +6,10 @@ import           Control.Exception
 import           Data.Monoid            ((<>))
 import           Data.ProtocolBuffers   hiding (field)
 import           Data.Serialize
-import           Data.Text.Encoding     (encodeUtf8)
+import           Data.Text.Encoding     (decodeUtf8, encodeUtf8)
 import qualified Data.Text.Lazy         as LT
 import qualified Data.Text.Lazy.Builder as LazyBuilder
+import           Snap.Core              (urlEncode)
 import           System.Timeout         (timeout)
 import           System.ZMQ4            hiding (source)
 import           Types.Chevalier
@@ -65,10 +66,12 @@ chevalier chevalier_url query_mvar =
         in removeTailComma $ LazyBuilder.toLazyText builder
       where
         f acc (SourceTag k v) = acc
-            <> (LazyBuilder.fromText $ getField k)
+            <> LazyBuilder.fromText (urlEncodeText $ getField k)
             <> "~"
-            <> (LazyBuilder.fromText $ getField v)
+            <> LazyBuilder.fromText (urlEncodeText $ getField v)
             <> ","
+
+        urlEncodeText = decodeUtf8 . urlEncode . encodeUtf8 -- fail
         removeTailComma txt
             | LT.null txt = txt
             | otherwise   = LT.init txt
