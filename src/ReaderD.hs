@@ -11,23 +11,26 @@ import           Data.ProtocolBuffers  hiding (field)
 import           Data.Serialize        (runGet, runPut)
 import           Data.Text.Encoding    (encodeUtf8)
 import           Pipes
-import           Pipes.Concurrent      (performGC, toOutput)
+import           Pipes.Concurrent      (toOutput)
 import           System.ZMQ4           hiding (source)
 import           Types.ReaderD
 
 readerd :: String -> MVar RangeQuery -> IO ()
 readerd readerd_url query_mvar =
-    withContext $ \c -> withSocket c Dealer $ \s -> do
-        connect s readerd_url
-        forever $ do
-            q@(RangeQuery _ _ _ origin output) <- takeMVar query_mvar
-            let request = rangeQueryToRequestMulti q
-            send s [SendMore] $ encodeUtf8 origin
-            send s [] request
-
-            runEffect $ yieldRanges s >-> toOutput output
-            performGC
+    withContext $ \c ->
+        withSocket c Dealer $ \s ->
+            forever $ processRequest s
   where
+    processRequest s = do
+        connect s readerd_url
+        q@(RangeQuery _ _ _ origin output) <- takeMVar query_mvar
+        let request = rangeQueryToRequestMulti q
+        send s [SendMore] $ encodeUtf8 origin
+        send s [] request
+
+        runEffect $ yieldRanges s >-> toOutput output
+        disconnect s readerd_url
+
     rangeQueryToRequestMulti RangeQuery{..} =
       let requests = [RequestSource tags start end]
           tags     = putField rangeSource
