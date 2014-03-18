@@ -17,6 +17,7 @@ import           GHC.Generics         (Generic)
 data SourceQuery = SourceQuery
     { sourceRequest  :: Text
     , sourcePage     :: Integer
+    , pageSize       :: Integer
     , sourceOrigin   :: Text
     , sourceResponse :: MVar (Either SomeException [LT.Text]) }
 
