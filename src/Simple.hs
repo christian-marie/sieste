@@ -118,9 +118,9 @@ interpolated readerd_mvar = do
                       Done -> return ()
 
     -- Sort the DataBurst by time, passing on a list of DataFrames
-    extractBursts = getField . frames <$> await >>= mapM_ yield
+    extractBursts = forever $ getField . frames <$> await >>= mapM_ yield
 
-    jsonEncode = (encode . toJSON <$> await) >>= yield >> jsonEncode
+    jsonEncode = forever $ (encode . toJSON <$> await) >>= yield
 
     -- We want to prepend all but the first burst with a comma.
     addCommas is_first
