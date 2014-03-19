@@ -77,19 +77,23 @@ interpolate :: Word64 -> Word64 -> Word64
 interpolate interval now end
     | interval <= 0 = error "interval <= 0"
     | now > end = error "now > end"
-    | otherwise = await >>= emitAt now
+    | otherwise = await >>= emitAt now Nothing
   where
     emitAt :: Word64    -- ^ The current requested time
+           -> Maybe DataFrame -- ^ Maybe then next data point, to allow
+                              --   multiple interpolated values between points
            -> DataFrame -- ^ The last known data point, initially the first.
            -> Pipe DataFrame (Int, Double) Snap ()
-    emitAt t p
+    emitAt t maybe_next p
         | t > end = return ()
         | p_time <- pointTime p
         , p_time <= t = do
-            -- Our first point is behind the requested time, which means that
-            -- we can see if the next point is beyond it.
-            p' <- await
+            p' <- case maybe_next of
+                Just n    -> return n
+                Nothing   -> await
+
             let p'_time = pointTime p'
+            -- Our first point is behind the requested time, which means that
             -- If the next point is beyond the requested_time, we can
             -- interpolate its value. If not, we need to look further
             -- forward in the list
@@ -113,16 +117,16 @@ interpolate interval now end
                     -- Now look for the next interval, we must keep the current
                     -- point in case we have to 'invent' several interpolated
                     -- points between this one and the next.
-                    emitAt (t + interval) p
+                    emitAt (t + interval) (Just p') p
                 else
                     -- Seek forward
-                    emitAt t p'
+                    emitAt t Nothing p'
         | p_time <- pointTime p, p_time > t =
             -- Our point is ahead of the requested time, this should only
             -- happen once: initially. We catch up in one iteration by
             -- calculating the next valid interval given this first point.
             let first = ((p_time `div` interval) + 1) * interval in
-                emitAt first p
+                emitAt first Nothing p
         | otherwise = error "emitAt: impossible"
 
 pointTime :: DataFrame -> Word64
