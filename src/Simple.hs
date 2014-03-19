@@ -32,10 +32,14 @@ simpleSearch chevalier_mvar = do
         Just bs -> utf8Or400 bs
         Nothing -> writeError 400 $ stringUtf8 "Must specify 'origin'")
 
-    maybe_response <- liftIO $ do
-        response_mvar <- newEmptyMVar
-        putMVar chevalier_mvar $ SourceQuery query page page_size origin response_mvar
-        timeout chevalierTimeout $ takeMVar response_mvar
+    maybe_response <- liftIO $ case origin of
+        -- Demo data on "BENHUR"
+        "BENHUR" -> return $ Just $ Right $ ["wave~sine"]
+        -- Otherwise, actually make the request to chevalier
+        _        -> do
+            response_mvar <- newEmptyMVar
+            putMVar chevalier_mvar $ SourceQuery query page page_size origin response_mvar
+            timeout chevalierTimeout $ takeMVar response_mvar
 
     either_response <- maybe timeoutError return maybe_response
     either chevalierError writeJSON either_response
