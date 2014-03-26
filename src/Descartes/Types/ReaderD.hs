@@ -34,10 +34,8 @@ data RangeQuery = RangeQuery
     , rangeStart  :: Word64
     , rangeEnd    :: Word64
     , rangeOrigin :: Text
-    , rangeOutput :: Output (Either SomeException Range)
+    , rangeOutput :: Output (Either SomeException DataBurst)
     }
-
-data Range = Burst DataBurst | Done
 
 -- Custom exceptions
 

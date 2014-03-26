@@ -1,17 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import           Descartes.Chevalier                (chevalier)
-import           Descartes.ReaderD                (readerd)
 import           Control.Applicative
 import           Control.Concurrent
 import           Control.Concurrent.Async
 import           Control.Monad
-import           Descartes.Simple                   (simpleSearch, interpolated)
+import           Descartes.Chevalier      (chevalier)
+import           Descartes.Interpolated   (interpolated)
+import           Descartes.Raw            (raw)
+import           Descartes.ReaderD        (readerd)
+import           Descartes.SimpleSearch   (simpleSearch)
 import           Snap.Core
 import           Snap.Http.Server
 import           System.Environment       (getEnv)
-import Descartes.Raw
 
 main :: IO ()
 main = do

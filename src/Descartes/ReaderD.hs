@@ -5,14 +5,14 @@ import           Codec.Compression.LZ4   (decompress)
 import           Control.Applicative     ((<$>))
 import           Control.Concurrent      hiding (yield)
 import           Control.Exception
-import           Control.Monad           (forever)
+import           Control.Monad           (forever, unless)
 import qualified Data.ByteString         as B
 import           Data.ProtocolBuffers    hiding (field)
 import           Data.Serialize          (runGet, runPut)
 import           Data.Text.Encoding      (encodeUtf8)
 import           Descartes.Types.ReaderD
 import           Pipes
-import           Pipes.Concurrent        (toOutput)
+import           Pipes.Concurrent        (toOutput, performGC)
 import           System.ZMQ4
 
 readerd :: String -> MVar RangeQuery -> IO ()
@@ -29,6 +29,7 @@ readerd readerd_url query_mvar =
         send s [] request
 
         runEffect $ yieldRanges s >-> toOutput output
+        performGC
         disconnect s readerd_url
 
     rangeQueryToRequestMulti RangeQuery{..} =
@@ -54,14 +55,13 @@ readerd readerd_url query_mvar =
             -- exceptions.
             Left e ->
                 yield $ Left e
-            Right msg -> if B.null msg
-                then yield $ Right Done
+            Right msg -> unless (B.null msg) $
                 -- If the burst cannot be decoded, we may as well give up,
                 -- chances are someone is talking the wrong protocol
-                else case decodeBurst msg of
+                case decodeBurst msg of
                     Left e  -> yield $ Left $ toException $ BurstDecodeFailure e
                     Right b ->  do
-                        yield $ Right $ Burst b
+                        yield $ Right b
                         yieldRanges s
 
     decodeBurst = runGet decodeMessage
