@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
 
-module Types.Chevalier where
+module Descartes.Types.Chevalier where
 
 import           Control.Concurrent
 import           Control.Exception

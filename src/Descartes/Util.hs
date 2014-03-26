@@ -2,7 +2,7 @@
 {-# LANGUAGE PatternGuards     #-}
 {-# LANGUAGE RecordWildCards   #-}
 
-module Util where
+module Descartes.Util where
 import           Control.Applicative
 import           Data.Aeson
 import           Data.Attoparsec.Text         (parseOnly, takeWhile1, (<*.))
@@ -17,12 +17,12 @@ import           Data.Text                    (Text)
 import           Data.Text.Encoding           (decodeUtf8')
 import           Data.Text.Lazy.Encoding      (decodeUtf8)
 import           Data.Word                    (Word64)
+import           Descartes.Types.ReaderD      (DataFrame (..), SourceTag (..),
+                                               ValueType (..))
+import           Descartes.Types.Util
 import           Pipes
 import           Snap.Core
 import           System.Clock                 (Clock (..), getTime, nsec, sec)
-import           Types.ReaderD                (DataFrame (..), SourceTag (..),
-                                               ValueType (..))
-import           Types.Util
 
 fromEpoch :: Int -> Word64
 fromEpoch = fromIntegral . (* 1000000000)

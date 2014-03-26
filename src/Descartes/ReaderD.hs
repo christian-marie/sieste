@@ -1,19 +1,19 @@
 {-# LANGUAGE RecordWildCards #-}
-module ReaderD where
+module Descartes.ReaderD where
 
-import           Codec.Compression.LZ4 (decompress)
-import           Control.Applicative   ((<$>))
-import           Control.Concurrent    hiding (yield)
+import           Codec.Compression.LZ4   (decompress)
+import           Control.Applicative     ((<$>))
+import           Control.Concurrent      hiding (yield)
 import           Control.Exception
-import           Control.Monad         (forever)
-import qualified Data.ByteString       as B
-import           Data.ProtocolBuffers  hiding (field)
-import           Data.Serialize        (runGet, runPut)
-import           Data.Text.Encoding    (encodeUtf8)
+import           Control.Monad           (forever)
+import qualified Data.ByteString         as B
+import           Data.ProtocolBuffers    hiding (field)
+import           Data.Serialize          (runGet, runPut)
+import           Data.Text.Encoding      (encodeUtf8)
+import           Descartes.Types.ReaderD
 import           Pipes
-import           Pipes.Concurrent      (toOutput)
+import           Pipes.Concurrent        (toOutput)
 import           System.ZMQ4
-import           Types.ReaderD
 
 readerd :: String -> MVar RangeQuery -> IO ()
 readerd readerd_url query_mvar =

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Raw where
+module Descartes.Raw where
 
 import           Control.Applicative
 import           Control.Concurrent           hiding (yield)
@@ -12,12 +12,12 @@ import qualified Data.ByteString.Char8        as B
 import qualified Data.ByteString.Lazy         as LB
 import           Data.ByteString.Lazy.Builder (stringUtf8)
 import           Data.ProtocolBuffers         (getField)
+import           Descartes.Types.ReaderD      (DataBurst (..), Range (..),
+                                               RangeQuery (..))
+import           Descartes.Util
 import           Pipes
 import           Pipes.Concurrent
 import           Snap.Core
-import           Types.ReaderD                (DataBurst (..), Range (..),
-                                               RangeQuery (..))
-import           Util
 
 raw :: MVar RangeQuery -> Snap ()
 raw readerd_mvar = do

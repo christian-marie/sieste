@@ -1,18 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Chevalier where
+module Descartes.Chevalier where
 
 import           Control.Concurrent
 import           Control.Exception
-import           Data.Monoid            ((<>))
-import           Data.ProtocolBuffers   hiding (field)
+import           Data.Monoid               ((<>))
+import           Data.ProtocolBuffers      hiding (field)
 import           Data.Serialize
-import           Data.Text.Encoding     (decodeUtf8, encodeUtf8)
-import qualified Data.Text.Lazy         as LT
-import qualified Data.Text.Lazy.Builder as LazyBuilder
-import           Snap.Core              (urlEncode)
-import           System.Timeout         (timeout)
-import           System.ZMQ4            hiding (source)
-import           Types.Chevalier
+import           Data.Text.Encoding        (decodeUtf8, encodeUtf8)
+import qualified Data.Text.Lazy            as LT
+import qualified Data.Text.Lazy.Builder    as LazyBuilder
+import           Descartes.Types.Chevalier
+import           Snap.Core                 (urlEncode)
+import           System.Timeout            (timeout)
+import           System.ZMQ4               hiding (source)
 
 -- | Chevalier communication thread, reads SourceQuery requsts from an mvar and
 -- replies over the included mvar.

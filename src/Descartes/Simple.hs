@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Simple where
+module Descartes.Simple where
 
 import           Control.Applicative
 import           Control.Concurrent           hiding (yield)
@@ -10,18 +10,18 @@ import           Data.Aeson                   (encode, toJSON)
 import           Data.ByteString              (ByteString)
 import qualified Data.ByteString.Char8        as B
 import qualified Data.ByteString.Lazy         as LB
-import Data.Text (breakOnAll)
 import           Data.ByteString.Lazy.Builder (stringUtf8)
 import           Data.Maybe
 import           Data.ProtocolBuffers         (getField)
+import           Data.Text                    (breakOnAll)
+import           Descartes.Types.Chevalier    (SourceQuery (..))
+import           Descartes.Types.ReaderD      (DataBurst (..), Range (..),
+                                               RangeQuery (..))
+import           Descartes.Util
 import           Pipes
 import           Pipes.Concurrent
 import           Snap.Core
 import           System.Timeout               (timeout)
-import           Types.Chevalier              (SourceQuery (..))
-import           Types.ReaderD                (DataBurst (..), Range (..),
-                                               RangeQuery (..))
-import           Util
 
 simpleSearch :: MVar SourceQuery -> Snap ()
 simpleSearch chevalier_mvar = do
@@ -35,7 +35,7 @@ simpleSearch chevalier_mvar = do
 
     maybe_response <- liftIO $ case origin of
         -- Demo data on "BENHUR"
-        "BENHUR" -> 
+        "BENHUR" ->
             -- The sine waves *really* bothered someone when she didn't ask for
             -- them. This appeases her. Note that *wave still does not work. I
             -- am hugely sorry for this Katie.

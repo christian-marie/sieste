@@ -5,7 +5,7 @@
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE RecordWildCards      #-}
 
-module Types.ReaderD where
+module Descartes.Types.ReaderD where
 
 import           Control.Exception
 import qualified Data.Aeson             as A
