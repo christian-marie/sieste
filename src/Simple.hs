@@ -10,6 +10,7 @@ import           Data.Aeson                   (encode, toJSON)
 import           Data.ByteString              (ByteString)
 import qualified Data.ByteString.Char8        as B
 import qualified Data.ByteString.Lazy         as LB
+import Data.Text (breakOnAll)
 import           Data.ByteString.Lazy.Builder (stringUtf8)
 import           Data.Maybe
 import           Data.ProtocolBuffers         (getField)
@@ -34,7 +35,16 @@ simpleSearch chevalier_mvar = do
 
     maybe_response <- liftIO $ case origin of
         -- Demo data on "BENHUR"
-        "BENHUR" -> return $ Just $ Right $ ["wave~sine"]
+        "BENHUR" -> 
+            -- The sine waves *really* bothered someone when she didn't ask for
+            -- them. This appeases her. Note that *wave still does not work. I
+            -- am hugely sorry for this Katie.
+            return $ Just $ Right $
+                case query of
+                    "*"    -> ["wave~sine"]
+                    search -> case breakOnAll search "wave~sine" of
+                            [] -> []
+                            _  -> ["wave~sine"]
         -- Otherwise, actually make the request to chevalier
         _        -> do
             response_mvar <- newEmptyMVar
