@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
 
 module Descartes.Util where
 import           Control.Applicative
@@ -12,7 +11,6 @@ import qualified Data.ByteString.Char8        as B
 import qualified Data.ByteString.Lazy         as LB
 import           Data.ByteString.Lazy.Builder (Builder, stringUtf8,
                                                toLazyByteString)
-import           Data.Maybe
 import           Data.Monoid                  ((<>))
 import           Data.ProtocolBuffers         (getField, putField)
 import           Data.Text                    (Text)
@@ -20,7 +18,7 @@ import           Data.Text.Encoding           (decodeUtf8')
 import           Data.Text.Lazy.Encoding      (decodeUtf8)
 import           Data.Word                    (Word64)
 import           Descartes.Types.ReaderD      (DataBurst (..), DataFrame (..),
-                                               SourceTag (..), ValueType (..))
+                                               SourceTag (..))
 import           Descartes.Types.Util
 import           Pipes
 import           Snap.Core
@@ -71,13 +69,6 @@ tagsOr400 text =
 
 pointTime :: DataFrame -> Word64
 pointTime = fromIntegral . getField . timestamp
-
-getValue :: DataFrame -> Rational
-getValue DataFrame{..}
-    | getField payload == NUMBER = toRational $ fromJust $ getField valueNumeric
-    | getField payload == REAL   = toRational $ fromJust $ getField valueMeasurement
-    | otherwise                  = error "Unhandled data burst type"
-
 
 timeNow :: MonadIO m => m Word64
 timeNow = liftIO $ fmap fromIntegral $
