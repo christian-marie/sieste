@@ -12,7 +12,7 @@ import           Data.Serialize        (runGet, runPut)
 import           Data.Text.Encoding    (encodeUtf8)
 import           Pipes
 import           Pipes.Concurrent      (toOutput)
-import           System.ZMQ4           hiding (source)
+import           System.ZMQ4
 import           Types.ReaderD
 
 readerd :: String -> MVar RangeQuery -> IO ()
@@ -52,7 +52,7 @@ readerd readerd_url query_mvar =
             -- On failure, pass the exception on and give up, more robust
             -- handling can be evaluated when we start to uncover handleable
             -- exceptions.
-            Left e -> do
+            Left e ->
                 yield $ Left e
             Right msg -> if B.null msg
                 then yield $ Right Done

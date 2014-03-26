@@ -11,6 +11,7 @@ import           Simple                   (simpleSearch, interpolated)
 import           Snap.Core
 import           Snap.Http.Server
 import           System.Environment       (getEnv)
+import Raw
 
 main :: IO ()
 main = do
@@ -32,7 +33,8 @@ main = do
     quickHttpServe $
         ifTop (writeBS docString) <|>
         route [ ("simple/search", simpleSearch chevalier_query_mvar)
-              , ("interpolated/:source", interpolated readerd_query_mvar) ]
+              , ("interpolated/:source", interpolated readerd_query_mvar)
+              , ("raw/:source", raw readerd_query_mvar) ]
 
   where
     -- Wait for any thread to explode, then restart it whilst logging the

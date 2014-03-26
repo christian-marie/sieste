@@ -13,6 +13,7 @@ Cabal-version:       >=1.2
 Executable descartes
   hs-source-dirs: src
   main-is: Main.hs
+  other-modules: Util
 
   Build-depends:
     base                      >= 4     && < 5,
@@ -25,6 +26,7 @@ Executable descartes
     type-level,
     async,
     zeromq4-haskell,
+    base64-bytestring,
     transformers,
     text,
     aeson,
