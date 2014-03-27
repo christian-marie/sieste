@@ -53,5 +53,7 @@ main = do
         let remaining_threads = filter (/= a) as
         watchThreads (restarted:remaining_threads) restart_action
 
-    docString = "This is the Vaultaire REST interface, you can find \
-                \documentation in the wiki under TODO"
+    docString = "<html>This is the Vaultaire REST interface, you can find \
+                \documentation in the wiki under <a href=\"\
+               \https://docs.anchor.net.au/system/vaultaire/Descartes\">\
+               \system/vaultaire/Descartes</a></html>"
