@@ -9,7 +9,6 @@ module Descartes.Types.ReaderD where
 
 import           Control.Exception
 import qualified Data.Aeson             as A
-import qualified Data.Attoparsec.Number as AN
 import           Data.ByteString        (ByteString)
 import           Data.ByteString.Base64 as B64
 import           Data.Int               (Int64)
@@ -20,7 +19,7 @@ import           Data.Text              (Text, unpack)
 import           Data.Text.Encoding     (decodeUtf8)
 import           Data.Typeable
 import qualified Data.Vector            as V
-
+import qualified Data.Scientific as S
 import           Data.TypeLevel         (D1, D2, D3, D4, D5, D6, D7, D8)
 import           Data.Word              (Word64)
 import           GHC.Generics           (Generic)
@@ -84,11 +83,11 @@ instance A.ToJSON DataFrame where
         | getField payload == NUMBER = A.Array $ V.fromList
             [ "number"
             , getEpoch
-            , A.Number $ AN.I $ fromIntegral $ fromJust $ getField valueNumeric]
+            , int64ToNumber $ fromJust $ getField valueNumeric ]
         | getField payload == REAL = A.Array $ V.fromList
             [ "real"
             , getEpoch
-            , A.Number $ AN.D $ fromJust $ getField valueMeasurement]
+            , doubleToNumber $ fromJust $ getField valueMeasurement]
         | getField payload == TEXT = A.Array $ V.fromList
             [ "text"
             , getEpoch
@@ -99,7 +98,15 @@ instance A.ToJSON DataFrame where
             , A.String $ decodeUtf8 $ B64.encode (fromJust $ getField valueBlob)]
         | otherwise = error "Unrepresentable DataFrame type"
       where
-        getEpoch = A.Number $ AN.I $ fromIntegral (getField timestamp) `div` 1000000000
+        getEpoch = int64ToNumber (fromIntegral $ getField timestamp `div` 1000000000)
+
+        doubleToNumber :: Double -> A.Value
+        doubleToNumber =
+            A.Number . S.fromFloatDigits
+
+        int64ToNumber :: Int64 -> A.Value
+        int64ToNumber =
+            A.Number . flip S.scientific 1 . fromIntegral
 
 data DataBurst = DataBurst
     { frames :: Repeated D1 (Message DataFrame)
