@@ -77,11 +77,11 @@ instance Decode DataFrame
 instance A.ToJSON DataFrame where
     toJSON DataFrame{..}
         | getField payload == EMPTY = A.Array $ V.fromList
-            [ "empty"
+            [ "counter"
             , getEpoch
             , A.Null ]
         | getField payload == NUMBER = A.Array $ V.fromList
-            [ "number"
+            [ "integer"
             , getEpoch
             , int64ToNumber $ fromJust $ getField valueNumeric ]
         | getField payload == REAL = A.Array $ V.fromList
@@ -93,7 +93,7 @@ instance A.ToJSON DataFrame where
             , getEpoch
             , A.String $ fromJust $ getField valueTextual]
         | getField payload == BINARY = A.Array $ V.fromList
-            [ "binary"
+            [ "blob"
             , getEpoch
             , A.String $ decodeUtf8 $ B64.encode (fromJust $ getField valueBlob)]
         | otherwise = error "Unrepresentable DataFrame type"
