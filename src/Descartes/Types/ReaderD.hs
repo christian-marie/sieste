@@ -98,7 +98,7 @@ instance A.ToJSON DataFrame where
             , A.String $ decodeUtf8 $ B64.encode (fromJust $ getField valueBlob)]
         | otherwise = error "Unrepresentable DataFrame type"
       where
-        getEpoch = int64ToNumber (fromIntegral $ getField timestamp `div` 1000000000)
+        getEpoch = doubleToNumber (fromRational (toRational $ getField timestamp) / 1000000000)
 
         doubleToNumber :: Double -> A.Value
         doubleToNumber =
