@@ -110,8 +110,7 @@ count interval now end !ctr frame
         -- Yield our conter of values up until 'now', starting again with a new
         -- now and counter.
         yield (toEpoch (now + interval), fromIntegral ctr)
-        tryAwaitCounterBurst interval now end
-                             (count interval (now + interval) end 0)
+        count interval (now + interval) end 0 frame
     | pointTime frame < now =
         -- Count any frames that are not past 'now'
         tryAwaitCounterBurst interval now end

@@ -78,7 +78,7 @@ instance Decode DataFrame
 instance A.ToJSON DataFrame where
     toJSON DataFrame{..}
         | getField payload == EMPTY = A.Array $ V.fromList
-            [ "binary"
+            [ "empty"
             , getEpoch
             , A.Null ]
         | getField payload == NUMBER = A.Array $ V.fromList
