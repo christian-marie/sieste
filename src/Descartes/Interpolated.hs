@@ -9,7 +9,7 @@ module Descartes.Interpolated where
 import           Control.Concurrent           hiding (yield)
 import           Control.Monad.IO.Class
 import           Data.ByteString.Lazy.Builder (stringUtf8)
-import           Data.Maybe                   (fromJust)
+import Control.Applicative
 import           Data.ProtocolBuffers         (getField)
 import           Data.Word                    (Word64)
 import           Descartes.Types.ReaderD      (DataFrame (..), RangeQuery (..),
@@ -18,6 +18,15 @@ import           Descartes.Util
 import           Pipes
 import           Pipes.Concurrent
 import           Snap.Core
+
+-- We introduce a phantom type here to distinguish between two kinds of frame,
+-- counters and rational frames. Rational frames can have thier values
+-- interpolated between, whereas counters can only be counted.
+newtype CategorizedFrame c = CategorizedFrame {
+    unCategorizedFrame :: DataFrame
+}
+type CounterFrame = CategorizedFrame ()
+type RationalFrame = CategorizedFrame Rational
 
 interpolated :: MVar RangeQuery -> Snap ()
 interpolated readerd_mvar = do
@@ -28,8 +37,6 @@ interpolated readerd_mvar = do
     -- later than the first point in the next burst.
     --
     -- This allows us to stream the data the user chunk by chunk.
-
-
     tags <- getParam "source" >>= (\s -> case s of
         Just bs -> utf8Or400 bs >>= tagsOr400
         Nothing -> writeError 400 $ stringUtf8 "Must specify 'source'")
@@ -63,44 +70,54 @@ interpolated readerd_mvar = do
                     (lift . writeLBS)
     writeBS "]"
 
--- It would be nice to move error out of this to the type level.
-getRational :: DataFrame -> Rational
-getRational DataFrame{..}
-    | getField payload == NUMBER = toRational $ fromJust $ getField valueNumeric
-    | getField payload == REAL   = toRational $ fromJust $ getField valueMeasurement
-    | otherwise                  = error $ "Data frame not representable as "
-                                   ++ "a rational number, this is a bug."
+getRational :: RationalFrame -> Rational
+getRational (CategorizedFrame DataFrame{..})
+    | getField payload == NUMBER = f $ getField valueNumeric
+    | getField payload == REAL   = f $ getField valueMeasurement
+    | otherwise                  = error "getRational, impossible"
+  where
+    f m = case m of Nothing -> error "frame does not have advertised payload"
+                    Just n  -> toRational n
+
+categorizeFrame :: DataFrame -> Either CounterFrame RationalFrame
+categorizeFrame frame@DataFrame{..}
+    | getField payload == NUMBER = Right $ CategorizedFrame frame
+    | getField payload == REAL   = Right $ CategorizedFrame frame
+    | otherwise                  = Left  $ CategorizedFrame frame
 
 -- Transfer control between interpolation method if the type is not
 -- representable. This must be kept in sync with the getRational function above
 -- until a type level solution can be devised that is not as clunky as
 -- wrapping.
-tryAwaitRationalBurst, tryAwaitCounterBurst
+tryAwaitRationalBurst
     :: Word64
     -> Word64
     -> Word64
-    -> (DataFrame -> Pipe DataFrame (Int, Double) Snap ())
+    -> (RationalFrame -> Pipe DataFrame (Int, Double) Snap ())
     -> Pipe DataFrame (Int, Double) Snap ()
 tryAwaitRationalBurst interval now end k = do
-    frame <- await
-    case getField $ payload frame of
-        NUMBER -> k frame
-        REAL   -> k frame
-        -- Continue as a counter
-        _      -> count interval now end 0 frame
+    frame <- categorizeFrame <$> await
+    either (count interval now end 0) k frame
 
+tryAwaitCounterBurst
+    :: Word64
+    -> Word64
+    -> Word64
+    -> (CounterFrame -> Pipe DataFrame (Int, Double) Snap ())
+    -> Pipe DataFrame (Int, Double) Snap ()
 tryAwaitCounterBurst interval now end k = do
-    frame <- await
-    case getField $ payload frame of
-        NUMBER -> interpolate interval now end
-        REAL   -> interpolate interval now end
-        _      -> k frame
+    frame <- categorizeFrame <$> await
+    either k (const $ interpolate interval now end) frame
+
+-- All frames have a time
+pointTime :: CategorizedFrame a -> Word64
+pointTime = fromIntegral . getField . timestamp . unCategorizedFrame
 
 count :: Word64
       -> Word64
       -> Word64
       -> Integer
-      -> DataFrame
+      -> CounterFrame
       -> Pipe DataFrame (Int, Double) Snap ()
 count interval now end !ctr frame
     | pointTime frame > end =
@@ -131,10 +148,11 @@ interpolate interval now end
     | now > end = error "now > end"
     | otherwise = tryAwaitRationalBurst interval now end (emitAt now Nothing)
   where
-    emitAt :: Word64    -- ^ The current requested time
-           -> Maybe DataFrame -- ^ Maybe the next data point, to allow
-                              --   multiple interpolated values between points
-           -> DataFrame -- ^ The last known data point, initially the first.
+    emitAt :: Word64              -- ^ The current requested time
+           -> Maybe RationalFrame -- ^ Maybe the next data point, to allow
+                                  --   multiple interpolated values between
+                                  --   points
+           -> RationalFrame       -- ^ The last known data point
            -> Pipe DataFrame (Int, Double) Snap ()
     emitAt t maybe_next p
         | t > end = return () -- could yield lerped at end here

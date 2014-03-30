@@ -67,9 +67,6 @@ tagsOr400 text =
         k = putField <$> takeWhile1 (/= '~') <*. "~"
         v = putField <$> takeWhile1 (/= ',') <* optional ","
 
-pointTime :: DataFrame -> Word64
-pointTime = fromIntegral . getField . timestamp
-
 timeNow :: MonadIO m => m Word64
 timeNow = liftIO $ fmap fromIntegral $
     (+) <$> ((1000000000*) . sec) <*> nsec <$> getTime Realtime
