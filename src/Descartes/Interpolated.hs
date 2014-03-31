@@ -86,9 +86,7 @@ categorizeFrame frame@DataFrame{..}
     | otherwise                  = Left  $ CategorizedFrame frame
 
 -- Transfer control between interpolation method if the type is not
--- representable. This must be kept in sync with the getRational function above
--- until a type level solution can be devised that is not as clunky as
--- wrapping.
+-- representable. 
 tryAwaitRationalBurst
     :: Word64
     -> Word64
@@ -155,7 +153,7 @@ interpolate interval now end
            -> RationalFrame       -- ^ The last known data point
            -> Pipe DataFrame (Int, Double) Snap ()
     emitAt t maybe_next p
-        | t > end = return () -- could yield lerped at end here
+        | t > end = return () -- could yield lerped value at end delta
         | p_time <- pointTime p
         , p_time <= t =
             case maybe_next of
@@ -177,8 +175,8 @@ interpolate interval now end
                             let smalld = toRational $ p'_time - p_time
                             let bigd   = toRational $ p'_time - t
                             let alpha | p'_time == t = 0
-                                    | p_time  == t = 1
-                                    | otherwise    = bigd / smalld
+                                      | p_time  == t = 1
+                                      | otherwise    = bigd / smalld
                             let lerped = lerp (getRational p')
                                               (getRational p)
                                               alpha
