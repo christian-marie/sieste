@@ -1,15 +1,15 @@
+{-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE PatternGuards       #-}
 {-# LANGUAGE RecordWildCards     #-}
-{-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Descartes.Interpolated where
 
+import           Control.Applicative
 import           Control.Concurrent           hiding (yield)
 import           Control.Monad.IO.Class
 import           Data.ByteString.Lazy.Builder (stringUtf8)
-import Control.Applicative
 import           Data.ProtocolBuffers         (getField)
 import           Data.Word                    (Word64)
 import           Descartes.Types.ReaderD      (DataFrame (..), RangeQuery (..),
@@ -86,7 +86,7 @@ categorizeFrame frame@DataFrame{..}
     | otherwise                  = Left  $ CategorizedFrame frame
 
 -- Transfer control between interpolation method if the type is not
--- representable. 
+-- representable.
 tryAwaitRationalBurst
     :: Word64
     -> Word64
