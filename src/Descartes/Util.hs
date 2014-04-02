@@ -21,6 +21,7 @@ import           Descartes.Types.ReaderD      (DataBurst (..), DataFrame (..),
                                                SourceTag (..))
 import           Descartes.Types.Util
 import           Pipes
+import qualified Pipes.Prelude                as Pipes
 import           Snap.Core
 import           System.Clock                 (Clock (..), getTime, nsec, sec)
 
@@ -96,10 +97,10 @@ logExceptions = forever $ await >>= either (lift . logException) yield
 -- Yield the frames from a burst one by one, no need to sort as readerd does
 -- that for us.
 extractBursts :: Monad m => Pipe DataBurst DataFrame m ()
-extractBursts = forever $ getField . frames <$> await >>= mapM_ yield
+extractBursts = Pipes.mapFoldable (getField . frames)
 
 jsonEncode :: (Monad m, ToJSON j) => Pipe j LB.ByteString m ()
-jsonEncode = forever $ (encode . toJSON <$> await) >>= yield
+jsonEncode = Pipes.map (encode . toJSON)
 
 -- We want to prepend all but the first burst with a comma.
 addCommas :: Monad m => Bool -> Pipe LB.ByteString LB.ByteString m ()
