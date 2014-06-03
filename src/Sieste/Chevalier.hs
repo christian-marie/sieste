@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Descartes.Chevalier where
+module Sieste.Chevalier where
 
 import           Control.Concurrent
 import           Control.Exception
@@ -9,7 +9,7 @@ import           Data.Serialize
 import           Data.Text.Encoding        (decodeUtf8, encodeUtf8)
 import qualified Data.Text.Lazy            as LT
 import qualified Data.Text.Lazy.Builder    as LazyBuilder
-import           Descartes.Types.Chevalier
+import           Sieste.Types.Chevalier
 import           Snap.Core                 (urlEncode)
 import           System.Timeout            (timeout)
 import           System.ZMQ4               hiding (source)

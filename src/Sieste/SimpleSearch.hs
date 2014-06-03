@@ -1,14 +1,14 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Descartes.SimpleSearch where
+module Sieste.SimpleSearch where
 
 import           Control.Applicative
 import           Control.Concurrent           hiding (yield)
 import           Control.Monad.IO.Class
 import           Data.ByteString.Lazy.Builder (stringUtf8)
 import           Data.Maybe
-import           Descartes.Types.Chevalier    (SourceQuery (..))
-import           Descartes.Util
+import           Sieste.Types.Chevalier    (SourceQuery (..))
+import           Sieste.Util
 import           Snap.Core
 import           System.Timeout               (timeout)
 

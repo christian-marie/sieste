@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Descartes.Raw where
+module Sieste.Raw where
 
 import           Control.Concurrent           hiding (yield)
 import           Control.Monad.IO.Class
 import           Data.ByteString.Lazy.Builder (stringUtf8)
-import           Descartes.Types.ReaderD      (RangeQuery (..))
-import           Descartes.Util
+import           Sieste.Types.ReaderD      (RangeQuery (..))
+import           Sieste.Util
 import           Pipes
 import           Pipes.Concurrent
 import           Snap.Core
