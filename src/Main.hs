@@ -54,6 +54,5 @@ main = do
         watchThreads (restarted:remaining_threads) restart_action
 
     docString = "<html>This is the Vaultaire REST interface, you can find \
-                \documentation in the wiki under <a href=\"\
-               \https://docs.anchor.net.au/system/vaultaire/Sieste\">\
-               \system/vaultaire/Sieste</a></html>"
+                \documentation in the <a href=\"https://github.com/anchor/sieste\" \
+		\target=\"_blank\">project readme</a>"
