@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings  #-}
 
-module Descartes.Types.Util where
+module Sieste.Types.Util where
 
 import           Data.Aeson           (ToJSON, object, toJSON, (.=))
 import qualified Data.Text.Lazy       as LT

@@ -1,4 +1,4 @@
-Name:                descartes
+Name:                sieste
 Version:             0.1
 Synopsis:            REST interface to vaultaire and chevalier
 Description:         REST interface to vaultaire and chevalier
@@ -10,7 +10,7 @@ Category:            Web
 Build-type:          Simple
 Cabal-version:       >=1.2
 
-Executable descartes
+Executable sieste
   hs-source-dirs: src
   main-is: Main.hs
 

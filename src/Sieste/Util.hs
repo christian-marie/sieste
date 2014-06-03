@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Descartes.Util where
+module Sieste.Util where
 import           Control.Applicative
 import           Control.Exception            (SomeException)
 import           Control.Monad
@@ -17,9 +17,9 @@ import           Data.Text                    (Text)
 import           Data.Text.Encoding           (decodeUtf8')
 import           Data.Text.Lazy.Encoding      (decodeUtf8)
 import           Data.Word                    (Word64)
-import           Descartes.Types.ReaderD      (DataBurst (..), DataFrame (..),
+import           Sieste.Types.ReaderD      (DataBurst (..), DataFrame (..),
                                                SourceTag (..))
-import           Descartes.Types.Util
+import           Sieste.Types.Util
 import           Pipes
 import qualified Pipes.Prelude                as Pipes
 import           Snap.Core

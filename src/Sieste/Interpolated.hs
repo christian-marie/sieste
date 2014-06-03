@@ -3,7 +3,7 @@
 {-# LANGUAGE PatternGuards       #-}
 {-# LANGUAGE RecordWildCards     #-}
 
-module Descartes.Interpolated where
+module Sieste.Interpolated where
 
 import           Control.Applicative
 import           Control.Concurrent           hiding (yield)
@@ -11,9 +11,9 @@ import           Control.Monad.IO.Class
 import           Data.ByteString.Lazy.Builder (stringUtf8)
 import           Data.ProtocolBuffers         (getField)
 import           Data.Word                    (Word64)
-import           Descartes.Types.ReaderD      (DataFrame (..), RangeQuery (..),
+import           Sieste.Types.ReaderD      (DataFrame (..), RangeQuery (..),
                                                ValueType (..))
-import           Descartes.Util
+import           Sieste.Util
 import           Pipes
 import           Pipes.Concurrent
 import           Snap.Core

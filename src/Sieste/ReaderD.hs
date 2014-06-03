@@ -1,5 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
-module Descartes.ReaderD where
+module Sieste.ReaderD where
 
 import           Codec.Compression.LZ4   (decompress)
 import           Control.Applicative     ((<$>))
@@ -10,7 +10,7 @@ import qualified Data.ByteString         as B
 import           Data.ProtocolBuffers    hiding (field)
 import           Data.Serialize          (runGet, runPut)
 import           Data.Text.Encoding      (encodeUtf8)
-import           Descartes.Types.ReaderD
+import           Sieste.Types.ReaderD
 import           Pipes
 import           Pipes.Concurrent        (toOutput, performGC)
 import           System.ZMQ4

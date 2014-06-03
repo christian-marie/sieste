@@ -5,11 +5,11 @@ import           Control.Applicative
 import           Control.Concurrent
 import           Control.Concurrent.Async
 import           Control.Monad
-import           Descartes.Chevalier      (chevalier)
-import           Descartes.Interpolated   (interpolated)
-import           Descartes.Raw            (raw)
-import           Descartes.ReaderD        (readerd)
-import           Descartes.SimpleSearch   (simpleSearch)
+import           Sieste.Chevalier      (chevalier)
+import           Sieste.Interpolated   (interpolated)
+import           Sieste.Raw            (raw)
+import           Sieste.ReaderD        (readerd)
+import           Sieste.SimpleSearch   (simpleSearch)
 import           Snap.Core
 import           Snap.Http.Server
 import           System.Environment       (getEnv)
@@ -55,5 +55,5 @@ main = do
 
     docString = "<html>This is the Vaultaire REST interface, you can find \
                 \documentation in the wiki under <a href=\"\
-               \https://docs.anchor.net.au/system/vaultaire/Descartes\">\
-               \system/vaultaire/Descartes</a></html>"
+               \https://docs.anchor.net.au/system/vaultaire/Sieste\">\
+               \system/vaultaire/Sieste</a></html>"
