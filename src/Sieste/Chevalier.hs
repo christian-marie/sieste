@@ -72,8 +72,7 @@ chevalier chevalier_url query_mvar =
             <> LazyBuilder.fromText (urlEncodeText $ getField v)
             <> ","
 
-	id = 
-	 -- LazyBuilder.toLazyText ( LazyBuilder.fromText (getField $ Sieste.Types.Chevalier.id s))
+	id =
 	  case (getField $ Sieste.Types.Chevalier.id s ) of
              Just t -> LazyBuilder.toLazyText ( LazyBuilder.fromText (t))
 	     Nothing -> ""
