@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DataKinds #-}
 module Sieste.Chevalier where
 
 import           Control.Concurrent
@@ -9,7 +10,7 @@ import           Data.Serialize
 import           Data.Text.Encoding        (decodeUtf8, encodeUtf8)
 import qualified Data.Text.Lazy            as LT
 import qualified Data.Text.Lazy.Builder    as LazyBuilder
-import           Sieste.Types.Chevalier
+import           Sieste.Types.Chevalier   
 import           Snap.Core                 (urlEncode)
 import           System.Timeout            (timeout)
 import           System.ZMQ4               hiding (source)
@@ -71,10 +72,18 @@ chevalier chevalier_url query_mvar =
             <> LazyBuilder.fromText (urlEncodeText $ getField v)
             <> ","
 
+	id = 
+	 -- LazyBuilder.toLazyText ( LazyBuilder.fromText (getField $ Sieste.Types.Chevalier.id s))
+	  case (getField $ Sieste.Types.Chevalier.id s ) of
+             Just t -> LazyBuilder.toLazyText ( LazyBuilder.fromText (t))
+	     Nothing -> ""
+
+	idtag = "_id~" <> id <> ","
+
         urlEncodeText = decodeUtf8 . urlEncode . encodeUtf8 -- fail
         removeTailComma txt
             | LT.null txt = txt
-            | otherwise   = LT.init txt
+            | otherwise   = LT.append idtag (LT.init txt)
 
     buildChevalierRequest (SourceQuery q page page_size _ _ ) = SourceRequest
         { requestTags    = putField $ buildTags q

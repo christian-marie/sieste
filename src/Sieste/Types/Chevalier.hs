@@ -51,5 +51,6 @@ instance Decode SourceResponse
 
 data Source = Source
     { tags :: Repeated D1 (Message SourceTag)
+    , id   :: Optional D2 (Value Text)
     } deriving (Generic, Eq, Show)
 instance Decode Source
