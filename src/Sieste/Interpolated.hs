@@ -37,8 +37,12 @@ interpolated readerd_mvar = do
     --
     -- This allows us to stream the data the user chunk by chunk.
     tags <- getParam "source" >>= (\s -> case s of
-        Just bs -> utf8Or400 bs >>= tagsOr400
+        Just bs -> utf8Or400 bs
         Nothing -> writeError 400 $ stringUtf8 "Must specify 'source'")
+
+--	 >>= (\s -> case s of
+--        Just bs -> utf8Or400 bs >>= tagsOr400
+--       Nothing -> writeError 400 $ stringUtf8 "Must specify 'source'")
 
     end <- getParam "end"
         >>= validateW64 (> 0) "end must be > 0" timeNow

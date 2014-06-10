@@ -12,6 +12,7 @@ import qualified Data.Text.Lazy       as LT
 import           Data.Typeable
 import           Data.TypeLevel       (D1, D2, D3)
 import           GHC.Generics         (Generic)
+import           Data.Word            (Word64)
 
 -- A request to the chevalier thread to search for a source by a single keyword
 data SourceQuery = SourceQuery
@@ -50,7 +51,7 @@ data SourceResponse = ChevalierResponse
 instance Decode SourceResponse
 
 data Source = Source
-    { tags :: Repeated D1 (Message SourceTag)
-    , id   :: Optional D2 (Value Text)
+    { tags      :: Repeated D1 (Message SourceTag)
+    , id        :: Optional D3 (Value Text)
     } deriving (Generic, Eq, Show)
 instance Decode Source

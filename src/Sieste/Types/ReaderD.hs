@@ -29,7 +29,7 @@ import           Pipes.Concurrent
 -- given range. The chunks are ordered in so far as the earliest point in a
 -- later chunk is no earlier than the latest point in the preceding chunk.
 data RangeQuery = RangeQuery
-    { rangeSource :: [SourceTag]
+    { rangeSource :: Text
     , rangeStart  :: Word64
     , rangeEnd    :: Word64
     , rangeOrigin :: Text
@@ -46,25 +46,9 @@ instance Exception ReaderDException
 
 -- Protobufs follow
 
-data SourceTag = SourceTag
-    { field :: Required D1 (Value Text)
-    , value :: Required D2 (Value Text)
-    } deriving (Generic, Eq)
-instance Encode SourceTag
-instance Decode SourceTag
-
-instance Show SourceTag where
-        show t =
-            unpack (getField $ field t) ++
-            ": " ++
-            unpack (getField $ value t)
-
-instance Show [SourceTag] where
-    show tags = intercalate ", " $ map show tags
-
 data DataFrame = DataFrame
     { origin           :: Optional D8 (Value Text),
-      source           :: Repeated D1 (Message SourceTag),
+      source           :: Optional D1 (Value Text),
       timestamp        :: Required D2 (Value (Fixed Word64)),
       payload          :: Required D3 (Enumeration ValueType),
       valueNumeric     :: Optional D4 (Value Int64),
@@ -130,7 +114,7 @@ instance Encode RequestMulti
 
 data RequestSource = RequestSource
     {
-      requestSourceField :: Repeated D1 (Message SourceTag),
+      requestSourceField :: Required D1 (Value Text),
       requestAlphaField  :: Required D2 (Value (Fixed Word64)),
       requestOmegaField  :: Optional D3 (Value (Fixed Word64))
     } deriving (Generic, Eq, Show)

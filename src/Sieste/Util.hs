@@ -17,8 +17,7 @@ import           Data.Text                    (Text)
 import           Data.Text.Encoding           (decodeUtf8')
 import           Data.Text.Lazy.Encoding      (decodeUtf8)
 import           Data.Word                    (Word64)
-import           Sieste.Types.ReaderD      (DataBurst (..), DataFrame (..),
-                                               SourceTag (..))
+import           Sieste.Types.ReaderD         (DataBurst (..), DataFrame (..))
 import           Sieste.Types.Util
 import           Pipes
 import qualified Pipes.Prelude                as Pipes
@@ -54,19 +53,6 @@ utf8Or400 :: ByteString -> Snap Text
 utf8Or400 = either conversionError return . decodeUtf8'
   where
     conversionError _ = writeError 400 $ stringUtf8 "Invalid UTF-8 in request"
-
-tagsOr400 :: Text -> Snap [SourceTag]
-tagsOr400 text =
-    case parseOnly tagParser text of
-        Left e ->
-            writeError 400 $ stringUtf8 "failed to parse source: " <> stringUtf8 e
-        Right s ->
-            return s
-  where
-    tagParser = some $ SourceTag <$> k <*> v
-      where
-        k = putField <$> takeWhile1 (/= '~') <*. "~"
-        v = putField <$> takeWhile1 (/= ',') <* optional ","
 
 timeNow :: MonadIO m => m Word64
 timeNow = liftIO $ fmap fromIntegral $
