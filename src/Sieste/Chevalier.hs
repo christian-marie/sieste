@@ -72,11 +72,7 @@ chevalier chevalier_url query_mvar =
             <> LazyBuilder.fromText (urlEncodeText $ getField v)
             <> ","
 
-	address =
-	  case (getField $ Sieste.Types.Chevalier.address s ) of
-             Just t -> LazyBuilder.toLazyText ( LazyBuilder.fromText (t))
-	     Nothing -> ""
-
+	address = decodeStringAsAddress (getField $ Sieste.Types.Chevalier.address s )
 	address' = "address~" <> address <> ","
 
         urlEncodeText = decodeUtf8 . urlEncode . encodeUtf8 -- fail
