@@ -72,22 +72,21 @@ chevalier chevalier_url query_mvar =
             <> LazyBuilder.fromText (urlEncodeText $ getField v)
             <> ","
 
-	id =
-	  case (getField $ Sieste.Types.Chevalier.id s ) of
+	address =
+	  case (getField $ Sieste.Types.Chevalier.address s ) of
              Just t -> LazyBuilder.toLazyText ( LazyBuilder.fromText (t))
 	     Nothing -> ""
 
-	idtag = "_id~" <> id <> ","
+	address' = "address~" <> address <> ","
 
         urlEncodeText = decodeUtf8 . urlEncode . encodeUtf8 -- fail
         removeTailComma txt
             | LT.null txt = txt
-            | otherwise   = LT.append idtag (LT.init txt)
+            | otherwise   = LT.append address' (LT.init txt)
 
     buildChevalierRequest (SourceQuery q page page_size _ _ ) = SourceRequest
-        { requestTags    = putField $ buildTags q
+        { requestTags    = putField $ Just q
         , startPage      = putField $ Just $ fromIntegral page
         , sourcesPerPage = putField $ Just $ fromIntegral page_size
         }
 
-    buildTags q = [ SourceTag { field = putField "*", value = putField q } ]

@@ -29,7 +29,7 @@ import           Pipes.Concurrent
 -- given range. The chunks are ordered in so far as the earliest point in a
 -- later chunk is no earlier than the latest point in the preceding chunk.
 data RangeQuery = RangeQuery
-    { rangeSource :: Text
+    { rangeSource :: Word64
     , rangeStart  :: Word64
     , rangeEnd    :: Word64
     , rangeOrigin :: Text
@@ -48,7 +48,7 @@ instance Exception ReaderDException
 
 data DataFrame = DataFrame
     { origin           :: Optional D8 (Value Text),
-      source           :: Optional D1 (Value Text),
+      source           :: Optional D1 (Value (Fixed Word64)),
       timestamp        :: Required D2 (Value (Fixed Word64)),
       payload          :: Required D3 (Enumeration ValueType),
       valueNumeric     :: Optional D4 (Value Int64),
@@ -114,7 +114,7 @@ instance Encode RequestMulti
 
 data RequestSource = RequestSource
     {
-      requestSourceField :: Required D1 (Value Text),
+      requestSourceField :: Required D1 (Value Word64),
       requestAlphaField  :: Required D2 (Value (Fixed Word64)),
       requestOmegaField  :: Optional D3 (Value (Fixed Word64))
     } deriving (Generic, Eq, Show)
