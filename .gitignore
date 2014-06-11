@@ -2,3 +2,5 @@ dist/
 log/
 *.hi
 *.o
+*.sw*
+.cabal-sandbox
