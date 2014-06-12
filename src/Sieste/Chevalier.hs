@@ -14,6 +14,8 @@ import           Sieste.Types.Chevalier
 import           Snap.Core                 (urlEncode)
 import           System.Timeout            (timeout)
 import           System.ZMQ4               hiding (source)
+import           Vaultaire.Types           (Address(..))
+import           Data.Text                 (pack)
 
 -- | Chevalier communication thread, reads SourceQuery requsts from an mvar and
 -- replies over the included mvar.
@@ -63,7 +65,7 @@ chevalier chevalier_url query_mvar =
 
     urlSafeSource s =
         let ts      = getField $ tags s
-            builder = foldl f "" ts
+            builder = address <> foldl f "" ts
         in removeTailComma $ LazyBuilder.toLazyText builder
       where
         f acc (SourceTag k v) = acc
@@ -72,17 +74,19 @@ chevalier chevalier_url query_mvar =
             <> LazyBuilder.fromText (urlEncodeText $ getField v)
             <> ","
 
-	address = decodeStringAsAddress (getField $ Sieste.Types.Chevalier.address s )
-	address' = "address~" <> address <> ","
+	address = case getField $ Sieste.Types.Chevalier.address s of
+	    Just c ->  LazyBuilder.fromText (urlEncodeText $ "address~" <> (pack $ show (Address c)) <> "," )
+	    Nothing -> ""
 
         urlEncodeText = decodeUtf8 . urlEncode . encodeUtf8 -- fail
         removeTailComma txt
             | LT.null txt = txt
-            | otherwise   = LT.append address' (LT.init txt)
+            | otherwise   = LT.init txt
 
     buildChevalierRequest (SourceQuery q page page_size _ _ ) = SourceRequest
-        { requestTags    = putField $ Just q
+        { requestTags    = putField $ buildTags q
         , startPage      = putField $ Just $ fromIntegral page
         , sourcesPerPage = putField $ Just $ fromIntegral page_size
         }
 
+    buildTags q = [ SourceTag { field = putField "*", value = putField q } ]
