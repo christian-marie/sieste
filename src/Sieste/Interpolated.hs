@@ -17,6 +17,9 @@ import           Sieste.Util
 import           Pipes
 import           Pipes.Concurrent
 import           Snap.Core
+import           Sieste.Classes
+import           Sieste.IdentityPointReader
+import           Sieste.IOPointReader
 
 -- We introduce a phantom type here to distinguish between two kinds of frame,
 -- counters and rational frames. Rational frames can have thier values
@@ -53,6 +56,17 @@ interpolated readerd_mvar = do
         Just bs -> utf8Or400 bs
         Nothing -> writeError 400 $ stringUtf8 "Must specify 'origin'")
 
+    -- If the user would like to use the test producer, we can 'hoist' that
+    -- from identity to IO through the Pipe monad stack.
+    --
+    -- Otherwise, we simply lift to IO and ask the Reader daemon for actual
+    -- points.
+    producer <- getParam "test" >>= (\o -> case o of
+        Just _ ->
+            hoist (return . runIdentity) readPoints
+        Nothing ->
+            liftIO readPoints)
+
     input <- liftIO $ do
         (output, input) <- spawn Single
         putMVar readerd_mvar $ RangeQuery tags start end origin' output
@@ -60,10 +74,7 @@ interpolated readerd_mvar = do
 
     modifyResponse $ setContentType "application/json"
     writeBS "["
-    runEffect $ for (fromInput input
-                     >-> logExceptions
-                     >-> extractBursts
-                     >-> interpolate interval (fromIntegral start) (fromIntegral end)
+    runEffect $ for (producer
                      >-> jsonEncode
                      >-> addCommas True)
                     (lift . writeLBS)

@@ -23,7 +23,6 @@ import           Pipes
 import qualified Pipes.Prelude                as Pipes
 import           Snap.Core
 import           System.Clock                 (Clock (..), getTime, nsec, sec)
-import           Data.Binary.Strict.Get        (runGet, getWord64le)
 
 fromEpoch :: Int -> Word64
 fromEpoch = fromIntegral . (* 1000000000)
@@ -56,7 +55,7 @@ utf8Or400 = either conversionError return . decodeUtf8'
     conversionError _ = writeError 400 $ stringUtf8 "Invalid UTF-8 in request"
 
 w64Or400 :: ByteString -> Snap Word64 
-w64Or400 = either conversionError return . fst . runGet getWord64le
+w64Or400 = either conversionError return . fst . runUnpacking getWord64LE
   where
     conversionError _ = writeError 400 $ stringUtf8 "Invalid Word64 in request"
 

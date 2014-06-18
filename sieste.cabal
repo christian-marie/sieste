@@ -35,6 +35,7 @@ Executable sieste
     attoparsec,
     pipes-concurrency,
     scientific,
+    reinterpret-cast,
     lz4,
     clock,
     protobuf
