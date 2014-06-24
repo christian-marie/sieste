@@ -8,7 +8,6 @@ import           Control.Monad
 import           Sieste.Chevalier      (chevalier)
 import           Sieste.Interpolated   (interpolated)
 import           Sieste.Raw            (raw)
-import           Sieste.ReaderD        (readerd)
 import           Sieste.SimpleSearch   (simpleSearch)
 import           Snap.Core
 import           Snap.Http.Server
@@ -20,22 +19,15 @@ main = do
     chevalier_query_mvar <- newEmptyMVar
     let start_chevalier = chevalier chevalier_url chevalier_query_mvar
 
-    readerd_url <- getEnv "READERD_URL"
-    readerd_query_mvar <- newEmptyMVar
-    let start_readerd = readerd readerd_url readerd_query_mvar
-
-
     chevalier_threads <- replicateM 16 $ async start_chevalier
-    readerd_threads   <- replicateM 16 $ async start_readerd
 
     async $ watchThreads chevalier_threads start_chevalier
-    async $ watchThreads readerd_threads start_readerd
 
     quickHttpServe $
         ifTop (writeBS docString) <|>
         route [ ("simple/search", simpleSearch chevalier_query_mvar)
-              , ("interpolated/:address", interpolated readerd_query_mvar)
-              , ("raw/:address", raw readerd_query_mvar) ]
+              , ("interpolated/:address", interpolated)
+              , ("raw/:address", raw) ]
 
   where
     -- Wait for any thread to explode, then restart it whilst logging the

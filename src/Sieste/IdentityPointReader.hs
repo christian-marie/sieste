@@ -20,21 +20,22 @@ import Marquise.Client
 import Data.Word(Word64)
 import Pipes
 import Data.ReinterpretCast
-import Data.Text
 
 instance PointReader Identity where
     readPoints :: Address -> Word64 -> Word64 -> Origin -> Producer SimplePoint Identity ()
 
-    readPoints 0 start end origin = do
+    -- Address for Ints
+    readPoints 0 start end _ = do
         yield (SimplePoint 0 start 0)
         let mid = (start + end) `div` 2
         yield (SimplePoint 0 mid 1)
         yield (SimplePoint 0 end 2)
 
-    readPoints 1 start end origin = do
+    -- Address for Doubles
+    readPoints 1 start end _ = do
         yield (SimplePoint 0 start (doubleToWord 0.0))
         let mid = (start + end) `div` 2
-        yield (SimplePoint 0 mid (doubleToWord 1.0))
-        yield (SimplePoint 0 end (doubleToWord 2.0))
+        yield (SimplePoint 0 mid (doubleToWord 1.1))
+        yield (SimplePoint 0 end (doubleToWord 2.2))
 
-    readPoints _ _ _ _ = error "invalid address, expect 0 or 1"
+    readPoints _ _ _ _ = error "invalid address, expect 0 (for ints) or 1 (for doubles)"

@@ -17,7 +17,9 @@ import Sieste.Classes
 
 instance PointReader IO where
     readPoints =  error "Implement PointReader for Vaultaire backend"
-
---    readPoints address start end origin =
---       withConnection "broker" $  \c -> decodeSimple address start end origin c --(withConnection "broker")
---         --   >-> decodeSimple
+{-
+    readPoints address start end origin =
+       withConnection "broker" $  \c -> decodeSimple address start end origin c --(withConnection "broker")
+         --   >-> decodeSimple
+         --   
+-}

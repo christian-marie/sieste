@@ -1,7 +1,4 @@
-{-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE PatternGuards       #-}
---{-# LANGUAGE RecordWildCards     #-}
 
 module Sieste.Interpolated where
 
@@ -9,35 +6,24 @@ import           Control.Applicative
 import           Control.Concurrent           hiding (yield)
 import           Control.Monad.IO.Class
 import           Data.ByteString.Lazy.Builder (stringUtf8)
-import           Data.ProtocolBuffers         (getField)
 import           Data.Word                    (Word64)
-import           Sieste.Types.ReaderD      (DataFrame (..), RangeQuery (..), ValueType (..))
 import           Sieste.Util
+import           Sieste.Types.SimplePoint
 import           Pipes
-import           Pipes.Concurrent
 import           Snap.Core
 import           Sieste.Classes
-import           Sieste.IdentityPointReader
 import           Sieste.IOPointReader
 import           Marquise.Classes
 import           Marquise.Types
+import           Vaultaire.Types
+import           Control.Monad.Identity
+import           Data.String
+import qualified Data.ByteString.Char8        as S
+import qualified Pipes.Prelude                as Pipes
 
--- KM no longer need frame types. 
--- We introduce a phantom type here to distinguish between two kinds of frame,
--- counters and rational frames. Rational frames can have thier values
--- interpolated between, whereas counters can only be counted.
---newtype CategorizedFrame c = CategorizedFrame {
---    unCategorizedFrame :: DataFrame
---}
---type CounterFrame = CategorizedFrame ()
---type RationalFrame = CategorizedFrame Rational
+interpolated :: Snap ()
 
-interpolated :: MVar RangeQuery -> Snap ()
-
-interpolated = undefined
-
-{-
-interpolated readerd_mvar = do
+interpolated = do
     -- The reader daemon provides no timestamp sorting within a chunk, but will
     -- provide sorting between chunks.
     --
@@ -45,9 +31,9 @@ interpolated readerd_mvar = do
     -- later than the first point in the next burst.
     --
     -- This allows us to stream the data the user chunk by chunk.
-    address <- getParam "source" >>= (\s -> case s of
-        Just bs -> w64Or400 bs 
-        Nothing -> writeError 400 $ stringUtf8 "Must specify 'source'")
+    address <- getParam "address" >>= (\s -> case s of
+        Just bs -> return . fromString . S.unpack $ bs
+        Nothing -> writeError 400 $ stringUtf8 "Must specify 'address'")
 
     end <- getParam "end"
         >>= validateW64 (> 0) "end must be > 0" timeNow
@@ -59,7 +45,9 @@ interpolated readerd_mvar = do
              >>= validateW64 (> 0)  "interval must be > 0" (return $ fromEpoch 60)
 
     origin <- getParam "origin" >>= (\o -> case o of
-        Just bs -> utf8Or400 bs
+        Just bs -> either (const $ writeError 400 $ stringUtf8 "Invalid origin")
+                          return
+                          (makeOrigin bs)
         Nothing -> writeError 400 $ stringUtf8 "Must specify 'origin'")
 
     -- If the user would like to use the test producer, we can 'hoist' that
@@ -67,6 +55,30 @@ interpolated readerd_mvar = do
     --
     -- Otherwise, we simply lift to IO and ask the Reader daemon for actual
     -- points.
+    input <- getParam "test" >>= (\o -> return $ case o of
+        Just _  -> hoist (return . runIdentity) (readPoints address start end origin)
+        Nothing -> hoist liftIO (readPoints address start end origin))
+    
+    makeJSON <- getParam "as_double" >>= (\o -> return $ case o of
+        Just _  -> Pipes.map AsDouble >-> jsonEncode
+        Nothing -> jsonEncode)
+    
+    modifyResponse $ setContentType "application/json"
+    writeBS "["
+    runEffect $ for (input
+                    >-> interpolate interval (fromIntegral start) (fromIntegral end)
+                    >-> makeJSON
+                    >-> addCommas True)
+                    (lift . writeLBS)
+    writeBS "]"
+
+interpolate :: Word64 -> Word64 -> Word64 -> Pipe SimplePoint SimplePoint Snap ()
+interpolate interval now end 
+    | interval <= 0 = error "interval <= 0"
+    | now > end = error "now > end"
+    | otherwise = undefined
+{-
+
     producer <- getParam "test" >>= (\o -> case o of
         Just _ ->
             hoist (return . runIdentity) readPoints -- KM (or 'undefined' if types don't match)
@@ -87,71 +99,8 @@ interpolated readerd_mvar = do
                      >-> addCommas True)
                     (lift . writeLBS)
     writeBS "]"
-
---getRational :: RationalFrame -> Rational
---getRational (CategorizedFrame DataFrame{..})
---    | getField payload == NUMBER = f $ getField valueNumeric
---    | getField payload == REAL   = f $ getField valueMeasurement
---  | otherwise                  = error "getRational, impossible"
---  where
---    f m = case m of Nothing -> error "frame does not have advertised payload"
---                    Just n  -> toRational n
-
--- no more dataframes
---categorizeFrame :: DataFrame -> Either CounterFrame RationalFrame
---categorizeFrame frame@DataFrame{..}
---    | getField payload == NUMBER = Right $ CategorizedFrame frame
---    | getField payload == REAL   = Right $ CategorizedFrame frame
---    | otherwise                  = Left  $ CategorizedFrame frame
-
--- Transfer control between interpolation method if the type is not
--- representable.
-tryAwaitRationalBurst
-    :: Word64
-    -> Word64
-    -> Word64
-    -> Pipe SimplePoint (Int, Double) Snap ()
-tryAwaitRationalBurst interval now end k = do
-    frame <- categorizeFrame <$> await
-    either (count interval now end 0) k frame
-
--- no more counters
---tryAwaitCounterBurst
---    :: Word64
---    -> Word64
---    -> Word64
---    -> (CounterFrame -> Pipe DataFrame (Int, Double) Snap ())
---    -> Pipe DataFrame (Int, Double) Snap ()
---tryAwaitCounterBurst interval now end k = do
---    frame <- categorizeFrame <$> await
---    either k (const $ interpolate interval now end) frame
-
--- All frames have a time
-pointTime :: CategorizedFrame a -> Word64
-pointTime = fromIntegral . getField . timestamp . unCategorizedFrame
-
-count :: Word64
-      -> Word64
-      -> Word64
-      -> Integer
-      -> Pipe SimplePoint (Int, Double) Snap ()
-count interval now end !ctr frame
-    | pointTime frame > end =
-        -- Done, output any values accumulated between now and end
-        yield (toEpoch end, fromIntegral ctr)
-    | pointTime frame >= now = do
-        -- Yield our conter of values up until 'now', starting again with a new
-        -- now and counter.
-        yield (toEpoch (now + interval), fromIntegral ctr)
-        count interval (now + interval) end 0 frame
-    | pointTime frame < now =
-        -- Count any frames that are not past 'now'
-        tryAwaitCounterBurst interval now end
-                             (count interval now end (succ ctr))
-    -- Please ensure this is always impossible, currently this is caught by
-    -- pointTime frame < now and pointTime frame >= now
-    | otherwise = error "count: impossible"
-
+-- KM - this method requires removal of kickback to RationalFrame, etc
+--
 -- This pipe takes SimplePoints as input, interpolating between the values to
 -- output interpolated x,y tuples at given intervals, from now to end.
 --

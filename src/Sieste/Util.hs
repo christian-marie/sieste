@@ -17,7 +17,6 @@ import           Data.Text                    (Text)
 import           Data.Text.Encoding           (decodeUtf8')
 import           Data.Text.Lazy.Encoding      (decodeUtf8)
 import           Data.Word                    (Word64)
-import           Sieste.Types.ReaderD         (DataBurst (..), DataFrame (..))
 import           Sieste.Types.Util
 import           Pipes
 import qualified Pipes.Prelude                as Pipes
@@ -55,12 +54,6 @@ utf8Or400 = either conversionError return . decodeUtf8'
   where
     conversionError _ = writeError 400 $ stringUtf8 "Invalid UTF-8 in request"
 
-w64Or400 :: ByteString -> Snap Word64 
-w64Or400 = error "reference vaultaire logic"
---w64Or400 = either conversionError return . tryUnpacking getWord64LE
---  where
---    conversionError _ = writeError 400 $ stringUtf8 "Invalid Word64 in request"
-
 
 timeNow :: MonadIO m => m Word64
 timeNow = liftIO $ fmap fromIntegral $
@@ -83,15 +76,6 @@ validateW64 check error_msg def user_input =
         Nothing -> def
 
 -- Useful pipes follow
-
--- Log exceptions, pass on Ranges
-logExceptions ::  Pipe (Either SomeException DataBurst) DataBurst Snap ()
-logExceptions = forever $ await >>= either (lift . logException) yield
-
--- Yield the frames from a burst one by one, no need to sort as readerd does
--- that for us.
-extractBursts :: Monad m => Pipe DataBurst DataFrame m ()
-extractBursts = Pipes.mapFoldable (getField . frames)
 
 jsonEncode :: (Monad m, ToJSON j) => Pipe j LB.ByteString m ()
 jsonEncode = Pipes.map (encode . toJSON)

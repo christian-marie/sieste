@@ -33,12 +33,10 @@ simpleSearch chevalier_mvar = do
   where
     chevalierTimeout = 10000000 -- 10 seconds
 
-    chevalierError e = do
-        logException e
-        writeError 500 $ stringUtf8 "Exception talking to chevalier backend"
+    chevalierError e = 
+        writeError 500 $ stringUtf8 ("Exception talking to chevalier backend" ++ show e)
 
     timeoutError = do
         let msg = "Timed out talking to chevalier backend"
-        logException msg
         writeError 500 $ stringUtf8 msg
 
