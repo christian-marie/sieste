@@ -1,0 +1,18 @@
+language: haskell
+
+env:
+  - 'UBUNTU_RELEASE=saucy'
+  - 'UBUNTU_RELEASE=trusty'
+
+before_install:
+  - 'sudo apt-get install cabal-install ghc happy'
+
+install:
+  - 'cabal update'
+  - 'cabal install --only-dependencies --enable-tests --enable-benchmarks'
+
+script:
+  - 'cabal configure'
+  - 'cabal build'
+  - 'cabal test'
+  - 'cabal sdist'
