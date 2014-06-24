@@ -2,17 +2,12 @@
 
 module Sieste.Util where
 import           Control.Applicative
-import           Control.Exception            (SomeException)
-import           Control.Monad
 import           Data.Aeson
-import           Data.Attoparsec.Text         (parseOnly, takeWhile1, (<*.))
 import           Data.ByteString              (ByteString)
 import qualified Data.ByteString.Char8        as B
 import qualified Data.ByteString.Lazy         as LB
 import           Data.ByteString.Lazy.Builder (Builder, stringUtf8,
                                                toLazyByteString)
-import           Data.Monoid                  ((<>))
-import           Data.ProtocolBuffers         (getField, putField)
 import           Data.Text                    (Text)
 import           Data.Text.Encoding           (decodeUtf8')
 import           Data.Text.Lazy.Encoding      (decodeUtf8)
@@ -22,7 +17,6 @@ import           Pipes
 import qualified Pipes.Prelude                as Pipes
 import           Snap.Core
 import           System.Clock                 (Clock (..), getTime, nsec, sec)
-import           Data.Packer
 
 fromEpoch :: Int -> Word64
 fromEpoch = fromIntegral . (* 1000000000)
@@ -54,7 +48,6 @@ utf8Or400 = either conversionError return . decodeUtf8'
   where
     conversionError _ = writeError 400 $ stringUtf8 "Invalid UTF-8 in request"
 
-
 timeNow :: MonadIO m => m Word64
 timeNow = liftIO $ fmap fromIntegral $
     (+) <$> ((1000000000*) . sec) <*> nsec <$> getTime Realtime
@@ -76,7 +69,6 @@ validateW64 check error_msg def user_input =
         Nothing -> def
 
 -- Useful pipes follow
-
 jsonEncode :: (Monad m, ToJSON j) => Pipe j LB.ByteString m ()
 jsonEncode = Pipes.map (encode . toJSON)
 

@@ -24,6 +24,8 @@ import Data.ReinterpretCast
 instance PointReader Identity where
     readPoints :: Address -> Word64 -> Word64 -> Origin -> Producer SimplePoint Identity ()
 
+    -- Are the times in this supposed to go through toEpoch? If so, they then typecheck as SimplePoint expects Word64, not Int
+
     -- Address for Ints
     readPoints 0 start end _ = do
         yield (SimplePoint 0 start 0)
