@@ -20,6 +20,7 @@ import Marquise.Client
 import Data.Word(Word64)
 import Pipes
 import Data.ReinterpretCast
+import Data.Text
 
 instance PointReader Identity where
     readPoints :: Address -> Word64 -> Word64 -> Origin -> Producer SimplePoint Identity ()

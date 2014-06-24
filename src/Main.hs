@@ -34,8 +34,8 @@ main = do
     quickHttpServe $
         ifTop (writeBS docString) <|>
         route [ ("simple/search", simpleSearch chevalier_query_mvar)
-              , ("interpolated/:source", interpolated readerd_query_mvar)
-              , ("raw/:source", raw readerd_query_mvar) ]
+              , ("interpolated/:address", interpolated readerd_query_mvar)
+              , ("raw/:address", raw readerd_query_mvar) ]
 
   where
     -- Wait for any thread to explode, then restart it whilst logging the
