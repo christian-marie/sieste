@@ -1,22 +1,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Sieste.Util where
-import           Control.Applicative
-import           Data.Aeson
-import           Data.ByteString              (ByteString)
-import qualified Data.ByteString.Char8        as B
-import qualified Data.ByteString.Lazy         as LB
-import           Data.ByteString.Lazy.Builder (Builder, stringUtf8,
-                                               toLazyByteString)
-import           Data.Text                    (Text)
-import           Data.Text.Encoding           (decodeUtf8')
-import           Data.Text.Lazy.Encoding      (decodeUtf8)
-import           Data.Word                    (Word64)
-import           Sieste.Types.Util
-import           Pipes
-import qualified Pipes.Prelude                as Pipes
-import           Snap.Core
-import           System.Clock                 (Clock (..), getTime, nsec, sec)
+import Control.Applicative
+import Data.Aeson
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Lazy as LB
+import Data.ByteString.Lazy.Builder (Builder, stringUtf8, toLazyByteString)
+import Data.Text (Text)
+import Data.Text.Encoding (decodeUtf8')
+import Data.Text.Lazy.Encoding (decodeUtf8)
+import Data.Word (Word64)
+import Pipes
+import qualified Pipes.Prelude as Pipes
+import Sieste.Types.Util
+import Snap.Core
+import System.Clock (Clock (..), getTime, nsec, sec)
 
 fromEpoch :: Int -> Word64
 fromEpoch = fromIntegral . (* 1000000000)

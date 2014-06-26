@@ -1,9 +1,9 @@
-{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Sieste.Types.Util where
 
-import           Data.Aeson           (ToJSON, object, toJSON, (.=))
-import qualified Data.Text.Lazy       as LT
+import Data.Aeson (ToJSON, object, toJSON, (.=))
+import qualified Data.Text.Lazy as LT
 
 data PrettyError = PrettyError { message :: LT.Text }
 instance ToJSON PrettyError where

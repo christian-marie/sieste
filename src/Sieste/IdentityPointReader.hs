@@ -1,10 +1,10 @@
 --
--- Copyright © 2013-2014 Anchor Systems, Pty Ltd and Others 
+-- Copyright © 2013-2014 Anchor Systems, Pty Ltd and Others
 --
--- The code in this file, and the program it is a part of, is 	  				 	 	 	   	 	  	   		  	 
--- made available to you by its authors as open source software: 	  				 	 	 	   	 	  	   		  	 
--- you can redistribute it and/or modify it under the terms of 	  				 	 	 	   	 	  	   		  	 
--- the 3-clause BSD licence. 
+-- The code in this file, and the program it is a part of, is
+-- made available to you by its authors as open source software:
+-- you can redistribute it and/or modify it under the terms of
+-- the 3-clause BSD licence.
 --
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
@@ -14,18 +14,13 @@ module Sieste.IdentityPointReader
 (
 ) where
 
-import Sieste.Classes
 import Control.Monad.Identity
-import Marquise.Client
-import Data.Word(Word64)
-import Pipes
 import Data.ReinterpretCast
+import Marquise.Client
+import Pipes
+import Sieste.Classes
 
 instance PointReader Identity where
-    readPoints :: Address -> Word64 -> Word64 -> Origin -> Producer SimplePoint Identity ()
-
-    -- Are the times in this supposed to go through toEpoch? If so, they then typecheck as SimplePoint expects Word64, not Int
-
     -- Address for Ints
     readPoints 0 start end _ = do
         yield (SimplePoint 0 start 0)

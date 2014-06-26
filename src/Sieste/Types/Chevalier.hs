@@ -1,18 +1,18 @@
+{-# LANGUAGE DataKinds          #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
-{-# LANGUAGE DataKinds      #-}
 
 module Sieste.Types.Chevalier where
 
-import           Control.Concurrent
-import           Control.Exception
-import           Data.Int             (Int64)
-import           Data.ProtocolBuffers hiding (field)
-import           Data.Text            (Text)
-import qualified Data.Text.Lazy       as LT
-import           Data.Typeable
-import           GHC.Generics         (Generic)
-import           Data.Word            (Word64)
+import Control.Concurrent
+import Control.Exception
+import Data.Int (Int64)
+import Data.ProtocolBuffers hiding (field)
+import Data.Text (Text)
+import qualified Data.Text.Lazy as LT
+import Data.Typeable
+import Data.Word (Word64)
+import GHC.Generics (Generic)
 
 -- A request to the chevalier thread to search for a source by a single keyword
 data SourceQuery = SourceQuery
@@ -51,7 +51,7 @@ data SourceResponse = ChevalierResponse
 instance Decode SourceResponse
 
 data Source = Source
-    { tags      :: Repeated 1 (Message SourceTag)
-    , address   :: Optional 3 (Value Word64)
+    { tags    :: Repeated 1 (Message SourceTag)
+    , address :: Optional 3 (Value Word64)
     } deriving (Generic, Eq, Show)
 instance Decode Source

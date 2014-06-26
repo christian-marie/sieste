@@ -1,21 +1,21 @@
+{-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DataKinds #-}
 module Sieste.Chevalier where
 
-import           Control.Concurrent
-import           Control.Exception
-import           Data.Monoid               ((<>))
-import           Data.ProtocolBuffers      hiding (field)
-import           Data.Serialize
-import           Data.Text.Encoding        (decodeUtf8, encodeUtf8)
-import qualified Data.Text.Lazy            as LT
-import qualified Data.Text.Lazy.Builder    as LazyBuilder
-import           Sieste.Types.Chevalier   
-import           Snap.Core                 (urlEncode)
-import           System.Timeout            (timeout)
-import           System.ZMQ4               hiding (source)
-import           Vaultaire.Types           (Address(..))
-import           Data.Text                 (pack)
+import Control.Concurrent
+import Control.Exception
+import Data.Monoid ((<>))
+import Data.ProtocolBuffers hiding (field)
+import Data.Serialize
+import Data.Text (pack)
+import Data.Text.Encoding (decodeUtf8, encodeUtf8)
+import qualified Data.Text.Lazy as LT
+import qualified Data.Text.Lazy.Builder as LazyBuilder
+import Sieste.Types.Chevalier
+import Snap.Core (urlEncode)
+import System.Timeout (timeout)
+import System.ZMQ4 hiding (source)
+import Vaultaire.Types (Address (..))
 
 -- | Chevalier communication thread, reads SourceQuery requsts from an mvar and
 -- replies over the included mvar.
@@ -74,9 +74,9 @@ chevalier chevalier_url query_mvar =
             <> LazyBuilder.fromText (urlEncodeText $ getField v)
             <> ","
 
-	address = case getField $ Sieste.Types.Chevalier.address s of
-	    Just c ->  LazyBuilder.fromText (urlEncodeText $ "address~" <> (pack $ show (Address c)) <> "," )
-	    Nothing -> ""
+        address = case getField $ Sieste.Types.Chevalier.address s of
+            Just c ->  LazyBuilder.fromText (urlEncodeText $ "address~" <> (pack $ show (Address c)) <> "," )
+            Nothing -> ""
 
         urlEncodeText = decodeUtf8 . urlEncode . encodeUtf8 -- fail
         removeTailComma txt

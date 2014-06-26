@@ -1,17 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import           Control.Applicative
-import           Control.Concurrent
-import           Control.Concurrent.Async
-import           Control.Monad
-import           Sieste.Chevalier      (chevalier)
-import           Sieste.Interpolated   (interpolated)
-import           Sieste.Raw            (raw)
-import           Sieste.SimpleSearch   (simpleSearch)
-import           Snap.Core
-import           Snap.Http.Server
-import           System.Environment       (getEnv)
+import Control.Applicative
+import Control.Concurrent
+import Control.Concurrent.Async
+import Control.Monad
+import Sieste.Chevalier (chevalier)
+import Sieste.Interpolated (interpolated)
+import Sieste.Raw (raw)
+import Sieste.SimpleSearch (simpleSearch)
+import Snap.Core
+import Snap.Http.Server
+import System.Environment (getEnv)
 
 main :: IO ()
 main = do
@@ -46,4 +46,4 @@ main = do
 
     docString = "<html>This is the Vaultaire REST interface, you can find \
                 \documentation in the <a href=\"https://github.com/anchor/sieste\" \
-		\target=\"_blank\">project readme</a>"
+                \target=\"_blank\">project readme</a>"

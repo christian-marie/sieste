@@ -1,25 +1,25 @@
-{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Sieste.Interpolated where
 
-import           Control.Applicative
-import           Control.Concurrent           hiding (yield)
-import           Control.Monad.IO.Class
-import           Data.ByteString.Lazy.Builder (stringUtf8)
-import           Data.Word                    (Word64)
-import           Sieste.Util
-import           Sieste.Types.SimplePoint
-import           Pipes
-import           Snap.Core
-import           Sieste.Classes
-import           Sieste.IOPointReader
-import           Marquise.Classes
-import           Marquise.Types
-import           Vaultaire.Types
-import           Control.Monad.Identity
-import           Data.String
-import qualified Data.ByteString.Char8        as S
-import qualified Pipes.Prelude                as Pipes
+import Control.Applicative
+import Control.Concurrent hiding (yield)
+import Control.Monad.Identity
+import Control.Monad.IO.Class
+import qualified Data.ByteString.Char8 as S
+import Data.ByteString.Lazy.Builder (stringUtf8)
+import Data.String
+import Data.Word (Word64)
+import Marquise.Classes
+import Marquise.Types
+import Pipes
+import qualified Pipes.Prelude as Pipes
+import Sieste.Classes
+import Sieste.IOPointReader
+import Sieste.Types.SimplePoint
+import Sieste.Util
+import Snap.Core
+import Vaultaire.Types
 
 interpolated :: Snap ()
 
@@ -58,11 +58,11 @@ interpolated = do
     input <- getParam "test" >>= (\o -> return $ case o of
         Just _  -> hoist (return . runIdentity) (readPoints address start end origin)
         Nothing -> hoist liftIO (readPoints address start end origin))
-    
+
     makeJSON <- getParam "as_double" >>= (\o -> return $ case o of
         Just _  -> Pipes.map AsDouble >-> jsonEncode
         Nothing -> jsonEncode)
-    
+
     modifyResponse $ setContentType "application/json"
     writeBS "["
     runEffect $ for (input
@@ -73,7 +73,7 @@ interpolated = do
     writeBS "]"
 
 interpolate :: Word64 -> Word64 -> Word64 -> Pipe SimplePoint SimplePoint Snap ()
-interpolate interval now end 
+interpolate interval now end
     | interval <= 0 = error "interval <= 0"
     | now > end = error "now > end"
     | otherwise = undefined -- this needs to do the interpolation magic.

@@ -1,25 +1,25 @@
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
 module Sieste.Raw where
 
-import           Control.Monad.IO.Class
-import           Data.ByteString.Lazy.Builder (stringUtf8)
-import           Sieste.Util
-import           Pipes
-import           Snap.Core
-import           Vaultaire.Types
-import           Sieste.Classes
-import           Control.Monad.Identity
-import           Data.String
-import qualified Data.ByteString.Char8        as S
-import qualified Pipes.Prelude                as Pipes
-import           Sieste.Types.SimplePoint 
+import Control.Monad.Identity
+import Control.Monad.IO.Class
+import qualified Data.ByteString.Char8 as S
+import Data.ByteString.Lazy.Builder (stringUtf8)
+import Data.String
+import Pipes
+import qualified Pipes.Prelude as Pipes
+import Sieste.Classes
+import Sieste.Types.SimplePoint
+import Sieste.Util
+import Snap.Core
+import Vaultaire.Types
 
 raw :: Snap ()
 raw = do
-    address <- getParam "address"  >>= (\o -> case o of 
+    address <- getParam "address"  >>= (\o -> case o of
         Just bs -> return . fromString . S.unpack $ bs
         Nothing -> writeError 400 $ stringUtf8 "Must specifiy 'address'")
 
