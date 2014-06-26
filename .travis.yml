@@ -24,10 +24,10 @@ before_install:
 
 install:
   - 'cabal-$CABALVER update'
-  -  git clone https://github.com/anchor/vaultaire.git 
-  -  cd vaultaire
+  -  cabal sandbox init
+  -  git clone https://github.com/anchor/vaultaire.git ../vaultaire/
+  -  cabal sandbox add-source ../vaultaire
   -  cabal install
-  -  cd ..
   - 'cabal-$CABALVER install --only-dependencies --enable-tests --enable-benchmarks'
 
 script:
