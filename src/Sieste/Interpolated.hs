@@ -1,21 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Sieste.Interpolated where
 
-import Control.Applicative
-import Control.Concurrent hiding (yield)
 import Control.Monad.Identity
 import Control.Monad.IO.Class
 import qualified Data.ByteString.Char8 as S
 import Data.ByteString.Lazy.Builder (stringUtf8)
 import Data.String
 import Data.Word (Word64)
-import Marquise.Classes
 import Marquise.Types
 import Pipes
 import qualified Pipes.Prelude as Pipes
 import Sieste.Classes
-import Sieste.IOPointReader
 import Sieste.Types.SimplePoint
 import Sieste.Util
 import Snap.Core
@@ -55,19 +52,19 @@ interpolated = do
     --
     -- Otherwise, we simply lift to IO and ask the Reader daemon for actual
     -- points.
-    input <- getParam "test" >>= (\o -> return $ case o of
+    stream <- getParam "test" >>= (\o -> return $ case o of
         Just _  -> hoist (return . runIdentity) (readPoints address start end origin)
         Nothing -> hoist liftIO (readPoints address start end origin))
 
-    makeJSON <- getParam "as_double" >>= (\o -> return $ case o of
+    json_processor <- getParam "as_double" >>= (\o -> return $ case o of
         Just _  -> Pipes.map AsDouble >-> jsonEncode
         Nothing -> jsonEncode)
 
     modifyResponse $ setContentType "application/json"
     writeBS "["
-    runEffect $ for (input
+    runEffect $ for (stream
                     >-> interpolate interval (fromIntegral start) (fromIntegral end)
-                    >-> makeJSON
+                    >-> json_processor
                     >-> addCommas True)
                     (lift . writeLBS)
     writeBS "]"
@@ -76,10 +73,63 @@ interpolate :: Word64 -> Word64 -> Word64 -> Pipe SimplePoint SimplePoint Snap (
 interpolate interval now end
     | interval <= 0 = error "interval <= 0"
     | now > end = error "now > end"
-    | otherwise = undefined -- this needs to do the interpolation magic.
+    | otherwise = do
+        left_p <- await
+        right_p <- await
+        emitAt now left_p right_p
+  where
+    emitAt :: Word64 -- ^ The current requested time
+           -> SimplePoint -- ^ The 'left' data point
+           -> SimplePoint -- ^ The 'right' (next) data point.
+           -> Pipe SimplePoint SimplePoint Snap ()
+    emitAt t left_p right_p
+        | t > end = return () -- could yield lerped value at end delta
+        | simpleTime left_p <= t =
+            -- Our first point is behind the requested time, which
+            -- means that If the next point is beyond the
+            -- requested_time, we can interpolate its value. If not, we
+            -- need to look further forward in the list
+            let left_time = simpleTime left_p in
+            let right_time = simpleTime right_p in
+            if right_time >= t
+                then do
+                    -- Obviously we have a match now and we can emit
+                    -- this value. We go for Rational precision here as
+                    -- we may be dealing with Word64s and I'm not sure
+                    -- what kind of use cases we are dealing with.
+                    --
+                    -- If this turns out to be slow, we can use
+                    -- Doubles.
+                    let smalld = toRational $ right_time - left_time
+                    let bigd = toRational $ right_time - t
+                    let alpha | right_time == t = 0
+                              | left_time == t = 1
+                              | otherwise = bigd / smalld
+                    let lerped = lerp (fromIntegral $ simplePayload right_p)
+                                      (fromIntegral $ simplePayload left_p)
+                                      alpha
+                    -- Reuse either point's address
+                    yield left_p{simpleTime = t, simplePayload = round lerped}
 
-{-
--- Original lerp function
+                    -- Now look for the next interval, we must keep the
+                    -- current points in case we have to allow
+                    -- multiple interpolated points between this one and
+                    -- the next.
+                    emitAt (t + interval) left_p right_p
+                else
+                    -- Seek forward:
+                    --   * a new right_p is awaited
+                    --   * the current left_p becomes the new right_p
+                    await >>= emitAt t right_p
+        | simpleTime left_p > t =
+            -- Our leftmost point is ahead of the requested time, this should
+            -- only happen once: initially. We catch up in one iteration by
+            -- calculating the next valid interval given this first point.
+            let first = ((simpleTime left_p `div` interval) + 1) * interval in
+                emitAt first left_p right_p
+        | otherwise = error "emitAt: impossible"
+
+
+-- | Linear interpolation between a and b at ratio alpha (between 0 and 1)
 lerp :: Rational -> Rational -> Rational -> Rational
 lerp a b alpha = ((1.0 - alpha) * a) + (alpha * b)
--}

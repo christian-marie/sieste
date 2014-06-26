@@ -22,11 +22,9 @@ import Sieste.Classes
 
 instance PointReader Identity where
     -- Address for Ints
-    readPoints 0 start end _ = do
-        yield (SimplePoint 0 start 0)
-        let mid = (start + end) `div` 2
-        yield (SimplePoint 0 mid 1)
-        yield (SimplePoint 0 end 2)
+    readPoints 0 start end _ =
+        forM_ [start, end `div` 128..end] $ \n ->
+            yield (SimplePoint 0 n (n + 1))
 
     -- Address for Doubles
     readPoints 1 start end _ = do
