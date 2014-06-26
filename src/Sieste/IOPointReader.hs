@@ -13,7 +13,18 @@ module Sieste.IOPointReader
  ( readPoints )
 where
 
+import Marquise.Client
+import Pipes
+import Pipes.Concurrent
 import Sieste.Classes
+import System.Environment
 
 instance PointReader IO where
-    readPoints =  error "Implement PointReader for Vaultaire backend"
+    readPoints addr start end origin = do
+        (o,i,s) <- liftIO $ spawn' (Bounded 1024)
+        _ <- liftIO . forkIO $ do
+            broker <- getEnv "BROKER_URL"
+            withReaderConnection broker $ \c ->
+                runEffect (readSimple addr start end origin c >-> decodeSimple >-> toOutput o)
+            atomically s
+        fromInput i

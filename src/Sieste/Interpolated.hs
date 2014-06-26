@@ -1,12 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module Sieste.Interpolated where
 
+import Control.Applicative
 import Control.Monad.Identity
 import Control.Monad.IO.Class
 import qualified Data.ByteString.Char8 as S
 import Data.ByteString.Lazy.Builder (stringUtf8)
+import Data.Maybe
+import Data.ReinterpretCast
 import Data.String
 import Data.Word (Word64)
 import Marquise.Types
@@ -52,25 +55,27 @@ interpolated = do
     --
     -- Otherwise, we simply lift to IO and ask the Reader daemon for actual
     -- points.
-    stream <- getParam "test" >>= (\o -> return $ case o of
-        Just _  -> hoist (return . runIdentity) (readPoints address start end origin)
-        Nothing -> hoist liftIO (readPoints address start end origin))
+    test_mode <- isJust <$> getParam "test"
+    let stream = if test_mode
+                    then hoist (return . runIdentity) (readPoints address start end origin)
+                    else hoist liftIO (readPoints address start end origin)
 
-    json_processor <- getParam "as_double" >>= (\o -> return $ case o of
-        Just _  -> Pipes.map AsDouble >-> jsonEncode
-        Nothing -> jsonEncode)
+    as_double  <- isJust <$> getParam "as_double"
+    let json_processor = if as_double
+                            then Pipes.map AsDouble >-> jsonEncode
+                            else jsonEncode
 
     modifyResponse $ setContentType "application/json"
     writeBS "["
     runEffect $ for (stream
-                    >-> interpolate interval (fromIntegral start) (fromIntegral end)
+                    >-> interpolate as_double interval (fromIntegral start) (fromIntegral end)
                     >-> json_processor
                     >-> addCommas True)
                     (lift . writeLBS)
     writeBS "]"
 
-interpolate :: Word64 -> Word64 -> Word64 -> Pipe SimplePoint SimplePoint Snap ()
-interpolate interval now end
+interpolate :: Bool -> Word64 -> Word64 -> Word64 -> Pipe SimplePoint SimplePoint Snap ()
+interpolate as_double interval now end
     | interval <= 0 = error "interval <= 0"
     | now > end = error "now > end"
     | otherwise = do
@@ -105,8 +110,9 @@ interpolate interval now end
                     let alpha | right_time == t = 0
                               | left_time == t = 1
                               | otherwise = bigd / smalld
-                    let lerped = lerp (fromIntegral $ simplePayload right_p)
-                                      (fromIntegral $ simplePayload left_p)
+                    let extract = if as_double then fromIntegral else toRational . wordToDouble
+                    let lerped = lerp (extract $ simplePayload right_p)
+                                      (extract $ simplePayload left_p)
                                       alpha
                     -- Reuse either point's address
                     yield left_p{simpleTime = t, simplePayload = round lerped}

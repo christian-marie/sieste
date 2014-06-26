@@ -5,3 +5,4 @@ log/
 *.sw*
 .cabal-sandbox
 cabal.sandbox.config
+tags

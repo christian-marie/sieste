@@ -28,9 +28,7 @@ instance PointReader Identity where
 
     -- Address for Doubles
     readPoints 1 start end _ = do
-        yield (SimplePoint 0 start (doubleToWord 0.0))
-        let mid = (start + end) `div` 2
-        yield (SimplePoint 0 mid (doubleToWord 1.1))
-        yield (SimplePoint 0 end (doubleToWord 2.2))
+        forM_ [start, end `div` 128..end] $ \n ->
+            yield (SimplePoint 0 n (doubleToWord (fromIntegral n) + 1))
 
     readPoints _ _ _ _ = error "invalid address, expect 0 (for ints) or 1 (for doubles)"
