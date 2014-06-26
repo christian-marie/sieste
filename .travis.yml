@@ -28,7 +28,7 @@ install:
   -  git clone https://github.com/anchor/vaultaire.git ../vaultaire/
   -  cabal sandbox add-source ../vaultaire
   -  cabal install
-  - 'cabal-$CABALVER install --only-dependencies --enable-tests --enable-benchmarks'
+  - 'cabal-$CABALVER install --only-dependencies'
 
 script:
   - 'cabal-$CABALVER configure'
