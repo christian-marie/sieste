@@ -20,7 +20,6 @@ main = do
     let start_chevalier = chevalier chevalier_url chevalier_query_mvar
 
     chevalier_threads <- replicateM 16 $ async start_chevalier
-
     async $ watchThreads chevalier_threads start_chevalier
 
     quickHttpServe $

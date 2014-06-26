@@ -24,7 +24,6 @@ Executable sieste
     aeson                     >= 0.7   && <= 0.8,
     cereal,
     vaultaire,
-    type-level,
     async,
     zeromq4-haskell,
     base64-bytestring,
