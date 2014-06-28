@@ -23,7 +23,7 @@ Executable sieste
     snap-server               >= 0.9   && < 0.11,
     aeson                     >= 0.7   && <= 0.8,
     cereal,
-    vaultaire,
+    marquise,
     async,
     zeromq4-haskell,
     base64-bytestring,

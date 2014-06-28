@@ -12,14 +12,13 @@ import Data.Maybe
 import Data.ReinterpretCast
 import Data.String
 import Data.Word (Word64)
-import Marquise.Types
+import Marquise.Client
 import Pipes
 import qualified Pipes.Prelude as Pipes
 import Sieste.Classes
 import Sieste.Types.SimplePoint
 import Sieste.Util
 import Snap.Core
-import Vaultaire.Types
 
 interpolated :: Snap ()
 

@@ -15,7 +15,7 @@ import Sieste.Classes
 import Sieste.Types.SimplePoint
 import Sieste.Util
 import Snap.Core
-import Vaultaire.Types
+import Marquise.Client
 
 raw :: Snap ()
 raw = do

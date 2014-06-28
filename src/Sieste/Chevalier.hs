@@ -15,7 +15,7 @@ import Sieste.Types.Chevalier
 import Snap.Core (urlEncode)
 import System.Timeout (timeout)
 import System.ZMQ4 hiding (source)
-import Vaultaire.Types (Address (..))
+import Marquise.Client
 
 -- | Chevalier communication thread, reads SourceQuery requsts from an mvar and
 -- replies over the included mvar.
