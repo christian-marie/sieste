@@ -1,5 +1,5 @@
 Name:                sieste
-Version:             0.1
+Version:             0.2
 Synopsis:            REST interface to vaultaire and chevalier
 Description:         REST interface to vaultaire and chevalier
 License:             BSD3
@@ -23,7 +23,7 @@ Executable sieste
     snap-server               >= 0.9   && < 0.11,
     aeson                     >= 0.7   && <= 0.8,
     cereal,
-    type-level,
+    marquise,
     async,
     zeromq4-haskell,
     base64-bytestring,
@@ -34,6 +34,8 @@ Executable sieste
     attoparsec,
     pipes-concurrency,
     scientific,
+    packer,
+    reinterpret-cast,
     lz4,
     clock,
     protobuf
@@ -43,14 +45,3 @@ Executable sieste
                  -fno-warn-unused-do-bind
   else
     ghc-options: -threaded -Wall -fwarn-tabs -funbox-strict-fields -O2
-
-test-suite             check
-  type:                exitcode-stdio-1.0
-  build-depends:       base >=4.6 && <4.7,
-                       bytestring,
-                       hspec,
-                       QuickCheck
-  hs-source-dirs:      tests
-  main-is:             check.hs
-  other-modules:       TestSuite
-  default-language:    Haskell2010

@@ -2,15 +2,15 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Sieste.SimpleSearch where
 
-import           Control.Applicative
-import           Control.Concurrent           hiding (yield)
-import           Control.Monad.IO.Class
-import           Data.ByteString.Lazy.Builder (stringUtf8)
-import           Data.Maybe
-import           Sieste.Types.Chevalier    (SourceQuery (..))
-import           Sieste.Util
-import           Snap.Core
-import           System.Timeout               (timeout)
+import Control.Applicative
+import Control.Concurrent hiding (yield)
+import Control.Monad.IO.Class
+import Data.ByteString.Lazy.Builder (stringUtf8)
+import Data.Maybe
+import Sieste.Types.Chevalier (SourceQuery (..))
+import Sieste.Util
+import Snap.Core
+import System.Timeout (timeout)
 
 simpleSearch :: MVar SourceQuery -> Snap ()
 simpleSearch chevalier_mvar = do
@@ -33,12 +33,10 @@ simpleSearch chevalier_mvar = do
   where
     chevalierTimeout = 10000000 -- 10 seconds
 
-    chevalierError e = do
-        logException e
-        writeError 500 $ stringUtf8 "Exception talking to chevalier backend"
+    chevalierError e =
+        writeError 500 $ stringUtf8 ("Exception talking to chevalier backend" ++ show e)
 
     timeoutError = do
         let msg = "Timed out talking to chevalier backend"
-        logException msg
         writeError 500 $ stringUtf8 msg
 

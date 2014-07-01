@@ -2,3 +2,7 @@ dist/
 log/
 *.hi
 *.o
+*.sw*
+.cabal-sandbox
+cabal.sandbox.config
+tags

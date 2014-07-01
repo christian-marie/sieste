@@ -1,18 +1,36 @@
 language: haskell
-
 env:
-  - 'UBUNTU_RELEASE=saucy'
-  - 'UBUNTU_RELEASE=trusty'
+  - 'UBUNTU_RELEASE=saucy GHCVER=7.8.2 CABALVER=1.20'
+  - 'UBUNTU_RELEASE=saucy GHCVER=7.8.3 CABALVER=1.20'
 
 before_install:
-  - 'sudo apt-get install cabal-install ghc happy'
+  - 'sudo add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu/ ${UBUNTU_RELEASE} main universe"'
+  - 'sudo add-apt-repository -y ppa:hvr/ghc'
+  - 'sudo apt-get update'
+  - 'sudo apt-get install librados-dev'
+  - 'sudo apt-get install cabal-install-$CABALVER ghc-$GHCVER happy'
+  - 'export PATH=/opt/ghc/$GHCVER/bin:$PATH'
+  - sudo apt-get remove libzmq1
+  - wget http://download.zeromq.org/zeromq-4.0.4.tar.gz
+  - tar -xf zeromq-4.0.4.tar.gz
+  - cd zeromq-4.0.4
+  - ./configure
+  - make
+  - sudo make install
+  - sudo su -c "echo '/usr/local/lib' > /etc/ld.so.conf.d/local.conf"
+  - sudo ldconfig
+  - cd ..
 
 install:
-  - 'cabal update'
-  - 'cabal install --only-dependencies --enable-tests --enable-benchmarks'
+  - 'cabal-$CABALVER update'
+  -  cabal sandbox init
+  -  git clone https://github.com/anchor/marquise.git ../marquise/
+  -  git clone https://github.com/anchor/vaultaire-common.git ../vaultaire-common/
+  -  cabal sandbox add-source ../marquise/
+  -  cabal sandbox add-source ../vaultaire-common/
+  - 'cabal-$CABALVER install --only-dependencies'
 
 script:
-  - 'cabal configure'
-  - 'cabal build'
-  - 'cabal test'
-  - 'cabal sdist'
+  - 'cabal-$CABALVER configure'
+  - 'cabal-$CABALVER build'
+  - 'cabal-$CABALVER sdist'

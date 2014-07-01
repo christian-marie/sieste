@@ -1,29 +1,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Sieste.Util where
-import           Control.Applicative
-import           Control.Exception            (SomeException)
-import           Control.Monad
-import           Data.Aeson
-import           Data.Attoparsec.Text         (parseOnly, takeWhile1, (<*.))
-import           Data.ByteString              (ByteString)
-import qualified Data.ByteString.Char8        as B
-import qualified Data.ByteString.Lazy         as LB
-import           Data.ByteString.Lazy.Builder (Builder, stringUtf8,
-                                               toLazyByteString)
-import           Data.Monoid                  ((<>))
-import           Data.ProtocolBuffers         (getField, putField)
-import           Data.Text                    (Text)
-import           Data.Text.Encoding           (decodeUtf8')
-import           Data.Text.Lazy.Encoding      (decodeUtf8)
-import           Data.Word                    (Word64)
-import           Sieste.Types.ReaderD      (DataBurst (..), DataFrame (..),
-                                               SourceTag (..))
-import           Sieste.Types.Util
-import           Pipes
-import qualified Pipes.Prelude                as Pipes
-import           Snap.Core
-import           System.Clock                 (Clock (..), getTime, nsec, sec)
+import Control.Applicative
+import Data.Aeson
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Lazy as LB
+import Data.ByteString.Lazy.Builder (Builder, stringUtf8, toLazyByteString)
+import Data.Text (Text)
+import Data.Text.Encoding (decodeUtf8')
+import Data.Text.Lazy.Encoding (decodeUtf8)
+import Data.Word (Word64)
+import Pipes
+import qualified Pipes.Prelude as Pipes
+import Sieste.Types.Util
+import Snap.Core
+import System.Clock (Clock (..), getTime, nsec, sec)
 
 fromEpoch :: Int -> Word64
 fromEpoch = fromIntegral . (* 1000000000)
@@ -55,19 +47,6 @@ utf8Or400 = either conversionError return . decodeUtf8'
   where
     conversionError _ = writeError 400 $ stringUtf8 "Invalid UTF-8 in request"
 
-tagsOr400 :: Text -> Snap [SourceTag]
-tagsOr400 text =
-    case parseOnly tagParser text of
-        Left e ->
-            writeError 400 $ stringUtf8 "failed to parse source: " <> stringUtf8 e
-        Right s ->
-            return s
-  where
-    tagParser = some $ SourceTag <$> k <*> v
-      where
-        k = putField <$> takeWhile1 (/= '~') <*. "~"
-        v = putField <$> takeWhile1 (/= ',') <* optional ","
-
 timeNow :: MonadIO m => m Word64
 timeNow = liftIO $ fmap fromIntegral $
     (+) <$> ((1000000000*) . sec) <*> nsec <$> getTime Realtime
@@ -89,16 +68,6 @@ validateW64 check error_msg def user_input =
         Nothing -> def
 
 -- Useful pipes follow
-
--- Log exceptions, pass on Ranges
-logExceptions ::  Pipe (Either SomeException DataBurst) DataBurst Snap ()
-logExceptions = forever $ await >>= either (lift . logException) yield
-
--- Yield the frames from a burst one by one, no need to sort as readerd does
--- that for us.
-extractBursts :: Monad m => Pipe DataBurst DataFrame m ()
-extractBursts = Pipes.mapFoldable (getField . frames)
-
 jsonEncode :: (Monad m, ToJSON j) => Pipe j LB.ByteString m ()
 jsonEncode = Pipes.map (encode . toJSON)
 
