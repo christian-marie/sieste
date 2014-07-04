@@ -13,6 +13,7 @@ import Data.ReinterpretCast
 import Data.String
 import Data.Word (Word64)
 import Marquise.Client
+import Numeric(fromRat)
 import Pipes
 import qualified Pipes.Prelude as Pipes
 import Sieste.Classes
@@ -109,12 +110,13 @@ interpolate as_double interval now end
                     let alpha | right_time == t = 0
                               | left_time == t = 1
                               | otherwise = bigd / smalld
-                    let extract = if as_double then fromIntegral else toRational . wordToDouble
-                    let lerped = lerp (extract $ simplePayload right_p)
-                                      (extract $ simplePayload left_p)
+                    let insert = if as_double then toRational . wordToDouble else fromIntegral
+                    let extract = if as_double else doubleToWord . fromRat else round
+                    let lerped = lerp (insert $ simplePayload right_p)
+                                      (insert $ simplePayload left_p)
                                       alpha
                     -- Reuse either point's address
-                    yield left_p{simpleTime = t, simplePayload = round lerped}
+                    yield left_p{simpleTime = t, simplePayload = extract lerped}
 
                     -- Now look for the next interval, we must keep the
                     -- current points in case we have to allow
