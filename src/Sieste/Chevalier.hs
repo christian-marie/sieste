@@ -65,7 +65,7 @@ chevalier chevalier_url query_mvar =
 
     urlSafeSource s =
         let ts      = getField $ tags s
-            builder = address <> foldl f "" ts
+            builder = addr <> foldl f "" ts
         in removeTailComma $ LazyBuilder.toLazyText builder
       where
         f acc (SourceTag k v) = acc
@@ -74,9 +74,10 @@ chevalier chevalier_url query_mvar =
             <> LazyBuilder.fromText (urlEncodeText $ getField v)
             <> ","
 
-        address = case getField $ Sieste.Types.Chevalier.address s of
-            Just c ->  LazyBuilder.fromText (urlEncodeText $ "address~" <> (pack $ show (Address c)) <> "," )
-            Nothing -> ""
+        addr = 
+            let a   = getField $ Sieste.Types.Chevalier.address s
+                ad  = pack . show . Address $ fromIntegral a
+            in LazyBuilder.fromText (urlEncodeText "address" <> "~" <> ad <> "," )
 
         urlEncodeText = decodeUtf8 . urlEncode . encodeUtf8 -- fail
         removeTailComma txt
