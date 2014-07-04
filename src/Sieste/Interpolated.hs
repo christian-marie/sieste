@@ -111,7 +111,7 @@ interpolate as_double interval now end
                               | left_time == t = 1
                               | otherwise = bigd / smalld
                     let insert = if as_double then toRational . wordToDouble else fromIntegral
-                    let extract = if as_double else doubleToWord . fromRat else round
+                    let extract = if as_double then doubleToWord . fromRat else round
                     let lerped = lerp (insert $ simplePayload right_p)
                                       (insert $ simplePayload left_p)
                                       alpha
