@@ -85,19 +85,15 @@ chevalier chevalier_url query_mvar =
             | LT.null txt = txt
             | otherwise   = LT.init txt
 
-    buildChevalierRequest (SourceQuery q address page page_size _ _ ) =
-        case address of
-            "[]"  -> SourceRequest
+    buildChevalierRequest (SourceQuery q address page page_size _ _ ) = do
+        let addr =  case address of
+              "*"  -> Nothing
+              a -> Just $ fromIntegral $ fromBase62 $ unpack a
+        SourceRequest
                 { requestTags    = putField $ buildTags q
                 , startPage      = putField $ Just $ fromIntegral page
                 , sourcesPerPage = putField $ Just $ fromIntegral page_size
-                , addressKey     = putField Nothing
-                }
-            addr -> SourceRequest
-                { requestTags    = putField $ buildTags q
-                , startPage      = putField $ Just $ fromIntegral page
-                , sourcesPerPage = putField $ Just $ fromIntegral page_size
-                , addressKey     = putField $ Just $ fromIntegral $ fromBase62 $ unpack $ addr
+                , addressKey     = putField addr
                 }
 
     buildTags q = [ SourceTag { field = putField "*", value = putField q } ]

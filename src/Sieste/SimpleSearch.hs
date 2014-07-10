@@ -15,7 +15,10 @@ import System.Timeout (timeout)
 simpleSearch :: MVar SourceQuery -> Snap ()
 simpleSearch chevalier_mvar = do
     query     <- utf8Or400 =<< fromMaybe "*"  <$> getParam "q"
-    address   <- utf8Or400 =<< fromMaybe "[]" <$> getParam "address"
+
+    -- Address can be used to get information based on an ID 
+    -- Follows the logic of query - if wildcard, return all things (no filtering on addres)
+    address   <- utf8Or400 =<< fromMaybe "*" <$> getParam "address"
     page      <- toInt     <$> fromMaybe "0"  <$> getParam "page"
     page_size <- toInt     <$> fromMaybe "64" <$> getParam "page_size"
 
