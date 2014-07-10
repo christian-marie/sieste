@@ -17,6 +17,7 @@ import GHC.Generics (Generic)
 -- A request to the chevalier thread to search for a source by a single keyword
 data SourceQuery = SourceQuery
     { sourceRequest  :: Text
+    , sourceAddress  :: Text
     , sourcePage     :: Integer
     , pageSize       :: Integer
     , sourceOrigin   :: Text
@@ -41,6 +42,7 @@ data SourceRequest = SourceRequest
     { requestTags    :: Repeated 1 (Message SourceTag)
     , startPage      :: Optional 2 (Value Int64)
     , sourcesPerPage :: Optional 3 (Value Int64)
+    , addressKey     :: Optional 6 (Value (Fixed Word64))
     } deriving (Generic, Eq, Show)
 instance Encode SourceRequest
 

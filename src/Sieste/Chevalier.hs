@@ -7,7 +7,7 @@ import Control.Exception
 import Data.Monoid ((<>))
 import Data.ProtocolBuffers hiding (field)
 import Data.Serialize
-import Data.Text (pack)
+import Data.Text (pack, unpack)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Builder as LazyBuilder
@@ -16,6 +16,7 @@ import Snap.Core (urlEncode)
 import System.Timeout (timeout)
 import System.ZMQ4 hiding (source)
 import Marquise.Client
+import Data.Locator
 
 -- | Chevalier communication thread, reads SourceQuery requsts from an mvar and
 -- replies over the included mvar.
@@ -84,10 +85,19 @@ chevalier chevalier_url query_mvar =
             | LT.null txt = txt
             | otherwise   = LT.init txt
 
-    buildChevalierRequest (SourceQuery q page page_size _ _ ) = SourceRequest
-        { requestTags    = putField $ buildTags q
-        , startPage      = putField $ Just $ fromIntegral page
-        , sourcesPerPage = putField $ Just $ fromIntegral page_size
-        }
+    buildChevalierRequest (SourceQuery q address page page_size _ _ ) =
+        case address of
+            "[]"  -> SourceRequest
+                { requestTags    = putField $ buildTags q
+                , startPage      = putField $ Just $ fromIntegral page
+                , sourcesPerPage = putField $ Just $ fromIntegral page_size
+                , addressKey     = putField Nothing
+                }
+            addr -> SourceRequest
+                { requestTags    = putField $ buildTags q
+                , startPage      = putField $ Just $ fromIntegral page
+                , sourcesPerPage = putField $ Just $ fromIntegral page_size
+                , addressKey     = putField $ Just $ fromIntegral $ fromBase62 $ unpack $ addr
+                }
 
     buildTags q = [ SourceTag { field = putField "*", value = putField q } ]

@@ -14,9 +14,10 @@ import System.Timeout (timeout)
 
 simpleSearch :: MVar SourceQuery -> Snap ()
 simpleSearch chevalier_mvar = do
-    query <- utf8Or400 =<< fromMaybe "*" <$> getParam "q"
-    page <- toInt <$> fromMaybe "0" <$> getParam "page"
-    page_size <- toInt <$> fromMaybe "64" <$> getParam "page_size"
+    query     <- utf8Or400 =<< fromMaybe "*"  <$> getParam "q"
+    address   <- utf8Or400 =<< fromMaybe "[]" <$> getParam "address"
+    page      <- toInt     <$> fromMaybe "0"  <$> getParam "page"
+    page_size <- toInt     <$> fromMaybe "64" <$> getParam "page_size"
 
     origin <- getParam "origin" >>= (\o -> case o of
         Just bs -> utf8Or400 bs
@@ -25,7 +26,7 @@ simpleSearch chevalier_mvar = do
     maybe_response <- liftIO $ do
         response_mvar <- newEmptyMVar
         putMVar chevalier_mvar $
-            SourceQuery query page page_size origin response_mvar
+            SourceQuery query address page page_size origin response_mvar
         timeout chevalierTimeout $ takeMVar response_mvar
 
     either_response <- maybe timeoutError return maybe_response
