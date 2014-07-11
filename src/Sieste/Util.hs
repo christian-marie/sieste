@@ -54,7 +54,7 @@ timeNow = liftIO $ fmap fromIntegral $
 toInt :: Integral a => ByteString -> a
 toInt bs = maybe 0 (fromIntegral . fst) (B.readInteger bs)
 
-validateW64 :: (Word64 -> Bool)  -- ^ functon  to check if user's value is OK
+validateW64 :: (Word64 -> Bool)  -- ^ function  to check if user's value is OK
             -> String            -- ^ error message if it is not okay
             -> Snap Word64       -- ^ action to retrieve default value
             -> Maybe ByteString  -- ^ possible user input

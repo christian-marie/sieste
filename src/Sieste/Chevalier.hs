@@ -42,7 +42,7 @@ chevalier chevalier_url query_mvar =
             -- has a timeout also, which is shorter and has already triggered.
             Nothing -> chevalier chevalier_url query_mvar
             -- Otherwise we have a response, if it's an error, we pass it along
-            -- and restart ourselves just incase
+            -- and restart ourselves just in case.
             Just either_result -> do
                 putMVar (sourceResponse query) either_result
                 case either_result of

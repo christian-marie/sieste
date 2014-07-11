@@ -21,7 +21,7 @@ raw :: Snap ()
 raw = do
     address <- getParam "address"  >>= (\o -> case o of
         Just bs -> return . fromString . S.unpack $ bs
-        Nothing -> writeError 400 $ stringUtf8 "Must specifiy 'address'")
+        Nothing -> writeError 400 $ stringUtf8 "Must specify 'address'")
 
     end <- getParam "end"
         >>= validateW64 (> 0) "end must be > 0" timeNow
