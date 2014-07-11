@@ -1,3 +1,12 @@
+--
+-- Copyright © 2013-2014 Anchor Systems, Pty Ltd and Others
+--
+-- The code in this file, and the program it is a part of, is
+-- made available to you by its authors as open source software:
+-- you can redistribute it and/or modify it under the terms of
+-- the 3-clause BSD licence.
+--
+
 {-# LANGUAGE DataKinds         #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Sieste.Chevalier where
@@ -42,7 +51,7 @@ chevalier chevalier_url query_mvar =
             -- has a timeout also, which is shorter and has already triggered.
             Nothing -> chevalier chevalier_url query_mvar
             -- Otherwise we have a response, if it's an error, we pass it along
-            -- and restart ourselves just incase
+            -- and restart ourselves just in case.
             Just either_result -> do
                 putMVar (sourceResponse query) either_result
                 case either_result of

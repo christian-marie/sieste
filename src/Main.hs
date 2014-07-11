@@ -1,3 +1,12 @@
+--
+-- Copyright © 2013-2014 Anchor Systems, Pty Ltd and Others
+--
+-- The code in this file, and the program it is a part of, is
+-- made available to you by its authors as open source software:
+-- you can redistribute it and/or modify it under the terms of
+-- the 3-clause BSD licence.
+--
+
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
@@ -44,6 +53,6 @@ main = do
         let remaining_threads = filter (/= a) as
         watchThreads (restarted:remaining_threads) restart_action
 
-    docString = "<html>This is the Vaultaire REST interface, you can find \
+    docString = "<html>This is the Vaultaire REST interface. You can find \
                 \documentation in the <a href=\"https://github.com/anchor/sieste\" \
-                \target=\"_blank\">project readme</a>"
+                \target=\"_blank\">project readme</a>."

@@ -1,3 +1,12 @@
+--
+-- Copyright © 2013-2014 Anchor Systems, Pty Ltd and Others
+--
+-- The code in this file, and the program it is a part of, is
+-- made available to you by its authors as open source software:
+-- you can redistribute it and/or modify it under the terms of
+-- the 3-clause BSD licence.
+--
+
 {-# LANGUAGE OverloadedStrings #-}
 
 module Sieste.Util where
@@ -54,7 +63,7 @@ timeNow = liftIO $ fmap fromIntegral $
 toInt :: Integral a => ByteString -> a
 toInt bs = maybe 0 (fromIntegral . fst) (B.readInteger bs)
 
-validateW64 :: (Word64 -> Bool)  -- ^ functon  to check if user's value is OK
+validateW64 :: (Word64 -> Bool)  -- ^ function  to check if user's value is OK
             -> String            -- ^ error message if it is not okay
             -> Snap Word64       -- ^ action to retrieve default value
             -> Maybe ByteString  -- ^ possible user input
