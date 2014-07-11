@@ -3,8 +3,8 @@ Version:             0.2
 Synopsis:            REST interface to vaultaire and chevalier
 Description:         REST interface to vaultaire and chevalier
 License:             BSD3
-Author:              christian@ponies.io
-Maintainer:          christian@ponies.io
+Author:              engineering@anchor.net.au
+Maintainer:          engineering@anchor.net.au
 Stability:           Experimental
 Category:            Web
 Build-type:          Simple
