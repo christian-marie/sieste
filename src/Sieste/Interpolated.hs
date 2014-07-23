@@ -40,6 +40,13 @@ interpolated = do
     -- later than the first point in the next burst.
     --
     -- This allows us to stream the data the user chunk by chunk.
+
+    origin <- getParam "origin" >>= (\o -> case o of
+        Just bs -> either (const $ writeError 400 $ stringUtf8 "Invalid origin")
+                          return
+                          (makeOrigin bs)
+        Nothing -> writeError 400 $ stringUtf8 "Must specify 'origin'")
+
     address <- getParam "address" >>= (\s -> case s of
         Just bs -> return . fromString . S.unpack $ bs
         Nothing -> writeError 400 $ stringUtf8 "Must specify 'address'")
@@ -52,12 +59,6 @@ interpolated = do
 
     interval <- getParam "interval"
              >>= validateW64 (> 0)  "interval must be > 0" (return $ fromEpoch 60)
-
-    origin <- getParam "origin" >>= (\o -> case o of
-        Just bs -> either (const $ writeError 400 $ stringUtf8 "Invalid origin")
-                          return
-                          (makeOrigin bs)
-        Nothing -> writeError 400 $ stringUtf8 "Must specify 'origin'")
 
     -- If the user would like to use the test producer, we can 'hoist' that
     -- from identity to IO through the Pipe monad stack.
