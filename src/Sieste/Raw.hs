@@ -28,6 +28,12 @@ import Marquise.Client
 
 raw :: Snap ()
 raw = do
+    origin <- getParam "origin" >>= (\o -> case o of
+        Just bs -> either (const $ writeError 400 $ stringUtf8 "Invalid origin")
+                          return
+                          (makeOrigin bs)
+        Nothing -> writeError 400 $ stringUtf8 "Must specify 'origin'")
+
     address <- getParam "address"  >>= (\o -> case o of
         Just bs -> return . fromString . S.unpack $ bs
         Nothing -> writeError 400 $ stringUtf8 "Must specify 'address'")
@@ -37,12 +43,6 @@ raw = do
 
     start <- getParam "start"
           >>= validateW64 (< end) "start must be < end" (return $ end - 86400)
-
-    origin <- getParam "origin" >>= (\o -> case o of
-        Just bs -> either (const $ writeError 400 $ stringUtf8 "Invalid origin")
-                          return
-                          (makeOrigin bs)
-        Nothing -> writeError 400 $ stringUtf8 "Must specify 'origin'")
 
     input <- getParam "test" >>= (\o -> return $ case o of
         Just _  -> hoist (return . runIdentity) (readPoints address start end origin)
