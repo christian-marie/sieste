@@ -16,7 +16,7 @@ import Control.Exception
 import Data.Monoid ((<>))
 import Data.ProtocolBuffers hiding (field)
 import Data.Serialize
-import Data.Text (pack, unpack)
+import Data.Text (pack, unpack, splitOn, append)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Builder as LazyBuilder
@@ -105,4 +105,9 @@ chevalier chevalier_url query_mvar =
                 , addressKey     = putField addr
                 }
 
-    buildTags q = [ SourceTag { field = putField "*", value = putField q } ]
+    buildTags q =
+        let values = splitOn wildcard q
+        in [ SourceTag { field = putField wildcard, value = putField (wrap a)} | a <- values ]
+        where
+            wildcard = "*"
+            wrap v =  append wildcard $ append v $ wildcard
