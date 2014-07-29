@@ -107,7 +107,7 @@ chevalier chevalier_url query_mvar =
 
     buildTags q =
         let values = splitOn wildcard q
-        in [ SourceTag { field = putField wildcard, value = putField (wrap a)} | a <- values ]
-        where
-            wildcard = "*"
-            wrap v =  append wildcard $ append v $ wildcard
+        in  [SourceTag { field = putField wildcard, value = putField (wrap a)} | a <- values ]
+      where
+        wildcard = "*"
+        wrap v =  append wildcard $ append v $ wildcard
