@@ -18,7 +18,7 @@ A simple interface to [Chevalier](https://github.com/anchor/chevalier), options 
 
 Parameters `q` and `address` should be used for searching and specific id listings, accordingly, and should not be used in conjuction with each other. 
 
-### /interpolated/{address}
+### /interpolated/{origin}/{address}
 Displays interpolated values retrieved from [readerd](https://github.com/anchor/vaultaire/blob/master/lib/Vaultaire/Reader.hs), options avaliable are:
 * `address`: the unique identifier of a source (within an origin)
 * `start`: unix epoch for start of search, no value before this will be returned.
@@ -31,7 +31,7 @@ The format for output is [time, value] where:
 * `time`: is the unix timestamp for the interpolated value.
 * `value`: is the linearly interpolated value between two numeric values
 
-### /raw/{source}
+### /raw/{origin}/{address}
 Renders points straight from [readerd](https://github.com/anchor/vaultaire/blob/master/lib/Vaultaire/Reader.hs) via [broker](https://github.com/anchor/vaultaire/blob/master/lib/Vaultaire/Broker.hs), no interpolation is done.
 * `address`: the unique identifier of a source (within an origin)
 * `start`: unix epoch  for start of search as an integer, no value before this will be returned.
