@@ -24,11 +24,11 @@ instance PointReader Identity where
     -- Address for Ints
     readPoints 0 start end _ =
         forM_ [start, end `div` 128..end] $ \n ->
-            yield (SimplePoint 0 n (n + 1))
+            yield (SimplePoint 0 (TimeStamp n) (n + 1))
 
     -- Address for Doubles
     readPoints 1 start end _ = do
         forM_ [start, end `div` 128..end] $ \n ->
-            yield (SimplePoint 0 n (doubleToWord (fromIntegral n) + 1))
+            yield (SimplePoint 0 (TimeStamp n) (doubleToWord (fromIntegral n) + 1))
 
     readPoints _ _ _ _ = error "invalid address, expect 0 (for ints) or 1 (for doubles)"

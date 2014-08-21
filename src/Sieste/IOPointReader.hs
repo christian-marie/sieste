@@ -25,6 +25,6 @@ instance PointReader IO where
         _ <- liftIO . forkIO $ do
             broker <- getEnv "BROKER_URL"
             withReaderConnection broker $ \c ->
-                runEffect (readSimple addr start end origin c >-> decodeSimple >-> toOutput o)
+                runEffect (readSimple addr (TimeStamp start) (TimeStamp end) origin c >-> decodeSimple >-> toOutput o)
             atomically s
         fromInput i
