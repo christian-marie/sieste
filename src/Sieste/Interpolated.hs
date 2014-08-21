@@ -93,19 +93,21 @@ interpolate as_double interval now end
         right_p <- await
         emitAt now left_p right_p
   where
+    rawTime :: SimplePoint -> Word64
+    rawTime (SimplePoint _ (TimeStamp t) _ ) = t
     emitAt :: Word64 -- ^ The current requested time
            -> SimplePoint -- ^ The 'left' data point
            -> SimplePoint -- ^ The 'right' (next) data point.
            -> Pipe SimplePoint SimplePoint Snap ()
     emitAt t left_p right_p
         | t > end = return () -- could yield lerped value at end delta
-        | simpleTime left_p <= t =
+        | rawTime left_p <= t =
             -- Our first point is behind the requested time, which
             -- means that If the next point is beyond the
             -- requested_time, we can interpolate its value. If not, we
             -- need to look further forward in the list
-            let left_time = simpleTime left_p in
-            let right_time = simpleTime right_p in
+            let left_time = rawTime left_p in
+            let right_time = rawTime right_p in
             if right_time >= t
                 then do
                     -- Obviously we have a match now and we can emit
@@ -126,7 +128,7 @@ interpolate as_double interval now end
                                       (insert $ simplePayload left_p)
                                       alpha
                     -- Reuse either point's address
-                    yield left_p{simpleTime = t, simplePayload = extract lerped}
+                    yield left_p{simpleTime = (TimeStamp t), simplePayload = extract lerped}
 
                     -- Now look for the next interval, we must keep the
                     -- current points in case we have to allow
@@ -138,11 +140,11 @@ interpolate as_double interval now end
                     --   * a new right_p is awaited
                     --   * the current left_p becomes the new right_p
                     await >>= emitAt t right_p
-        | simpleTime left_p > t =
+        | rawTime left_p > t =
             -- Our leftmost point is ahead of the requested time, this should
             -- only happen once: initially. We catch up in one iteration by
             -- calculating the next valid interval given this first point.
-            let first = ((simpleTime left_p `div` interval) + 1) * interval in
+            let first = ((rawTime left_p `div` interval) + 1) * interval in
                 emitAt first left_p right_p
         | otherwise = error "emitAt: impossible"
 

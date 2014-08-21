@@ -25,4 +25,5 @@ instance A.ToJSON AsDouble where
 instance A.ToJSON SimplePoint where
     toJSON (SimplePoint _ time payload) = A.Array $ V.fromList [A.toJSON time, A.toJSON payload ]
 
-
+instance A.ToJSON TimeStamp where
+    toJSON (TimeStamp ts) = A.toJSON ts
