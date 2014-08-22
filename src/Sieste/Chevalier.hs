@@ -20,7 +20,7 @@ import Data.Text (pack, unpack, splitOn, append)
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.Builder as LazyBuilder
-import Sieste.Types.Chevalier
+import Chevalier.Types
 import Snap.Core (urlEncode)
 import System.Timeout (timeout)
 import System.ZMQ4 hiding (source)
@@ -85,7 +85,7 @@ chevalier chevalier_url query_mvar =
             <> ","
 
         addr = 
-            let a   = getField $ Sieste.Types.Chevalier.address s
+            let a   = getField $ Chevalier.Types.address s
                 ad  = pack . show . Address $ fromIntegral a
             in LazyBuilder.fromText (urlEncodeText "address" <> "~" <> ad <> "," )
 
