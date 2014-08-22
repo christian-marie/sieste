@@ -16,7 +16,7 @@ import Control.Concurrent hiding (yield)
 import Control.Monad.IO.Class
 import Data.ByteString.Lazy.Builder (stringUtf8)
 import Data.Maybe
-import Sieste.Types.Chevalier (SourceQuery (..))
+import Chevalier.Types (SourceQuery (..))
 import Sieste.Util
 import Snap.Core
 import System.Timeout (timeout)
