@@ -25,7 +25,7 @@ instance PointReader IO where
         _ <- liftIO . forkIO $ do
             broker <- getEnv "BROKER_URL"
             withReaderConnection broker $ \c ->
-                withMarquiseHandler (error . show)
+                crashOnMarquiseErrors
                 $ runEffect
                 $ (readSimple addr (TimeStamp start) (TimeStamp end) origin c
                   >-> decodeSimple
