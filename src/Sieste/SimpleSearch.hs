@@ -16,14 +16,16 @@ import Control.Concurrent hiding (yield)
 import Control.Monad.IO.Class
 import Data.ByteString.Lazy.Builder (stringUtf8)
 import Data.Maybe
-import Chevalier.Types (SourceQuery (..))
+import Chevalier.Types
 import Sieste.Util
 import Snap.Core
 import System.Timeout (timeout)
+import Chevalier.Util
+import Data.Text (Text)
 
 simpleSearch :: MVar SourceQuery -> Snap ()
 simpleSearch chevalier_mvar = do
-    query     <- utf8Or400 =<< fromMaybe "*"  <$> getParam "q"
+    q        <- utf8Or400 =<< fromMaybe "*"  <$> getParam "q"
 
     -- Address can be used to get information based on an ID 
     -- Follows the logic of query - if wildcard, return all things (no filtering on addres)
@@ -34,6 +36,16 @@ simpleSearch chevalier_mvar = do
     origin <- getParam "origin" >>= (\o -> case o of
         Just bs -> utf8Or400 bs
         Nothing -> writeError 400 $ stringUtf8 "Must specify 'origin'")
+
+
+    key   <- utf8Or400 =<< fromMaybe "*" <$> getParam "key"
+    value <- utf8Or400 =<< fromMaybe "*" <$> getParam "value"
+
+
+    -- If key/value, use that as a SourceTag. Otherwise, use query as just Text
+    let query = case q of
+	    "*" -> Right [buildTag key value]
+            a -> Left a
 
     maybe_response <- liftIO $ do
         response_mvar <- newEmptyMVar
@@ -52,4 +64,3 @@ simpleSearch chevalier_mvar = do
     timeoutError = do
         let msg = "Timed out talking to chevalier backend"
         writeError 500 $ stringUtf8 msg
-
