@@ -21,7 +21,7 @@ import Sieste.Util
 import Snap.Core
 import System.Timeout (timeout)
 import Chevalier.Util
-import Data.Text (Text)
+import Data.Text (splitOn)
 
 simpleSearch :: MVar SourceQuery -> Snap ()
 simpleSearch chevalier_mvar = do
@@ -37,14 +37,12 @@ simpleSearch chevalier_mvar = do
         Just bs -> utf8Or400 bs
         Nothing -> writeError 400 $ stringUtf8 "Must specify 'origin'")
 
-
     key   <- utf8Or400 =<< fromMaybe "*" <$> getParam "key"
     value <- utf8Or400 =<< fromMaybe "*" <$> getParam "value"
 
-
-    -- If key/value, use that as a SourceTag. Otherwise, use query as just Text
+    -- If there is no query, use key/value
     let query = case q of
-	    "*" -> Right [buildTag key value]
+	    "*" -> Right [buildTag k v | (k, v) <- zip (splitOn " " key) (splitOn " " value)]
             a -> Left a
 
     maybe_response <- liftIO $ do
