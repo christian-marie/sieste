@@ -21,7 +21,9 @@ import Sieste.Util
 import Snap.Core
 import System.Timeout (timeout)
 import Chevalier.Util
-import Data.Text (splitOn)
+import Data.Text (splitOn, append)
+import Data.ProtocolBuffers hiding (field)
+
 
 simpleSearch :: MVar SourceQuery -> Snap ()
 simpleSearch chevalier_mvar = do
@@ -42,8 +44,8 @@ simpleSearch chevalier_mvar = do
 
     -- If there is no query, use key/value
     let query = case q of
-	    "*" -> Right [buildTag k v | (k, v) <- zip (splitOn " " key) (splitOn " " value)]
-            a -> Left a
+	    "*" -> [buildTag k v | (k, v) <- zip (splitOn " " key) (splitOn " " value)]
+            a   -> [buildWildcardTag b | b <- splitOn "*" a]
 
     maybe_response <- liftIO $ do
         response_mvar <- newEmptyMVar
