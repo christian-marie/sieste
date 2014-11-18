@@ -42,7 +42,13 @@ simpleSearch chevalier_mvar = do
     key   <- utf8Or400 =<< fromMaybe "*" <$> getParam "key"
     value <- utf8Or400 =<< fromMaybe "*" <$> getParam "value"
 
-    -- If there is no query, use key/value
+    -- Query takes precidence over key/value pairs
+    -- Only matched key/value pairs will be used, in cases of mismatched pairs 
+    -- Possible search constructs:
+    --   ?q=*term* 
+    --   ?q=*term*more*
+    --   ?key=term&value=term
+    --   ?key=term&value=term&key=term&value=term
     let query = case q of
 	    "*" -> [buildTag k v | (k, v) <- zip (splitOn " " key) (splitOn " " value)]
             a   -> [buildWildcardTag b | b <- splitOn "*" a]
