@@ -99,15 +99,8 @@ chevalier chevalier_url query_mvar =
               "*"  -> Nothing
               a -> Just $ fromIntegral $ fromBase62 $ unpack a
         SourceRequest
-                { requestTags    = putField $ buildTags q
+                { requestTags    = putField $ q
                 , startPage      = putField $ Just $ fromIntegral page
                 , sourcesPerPage = putField $ Just $ fromIntegral page_size
                 , addressKey     = putField addr
                 }
-
-    buildTags q =
-        let values = splitOn wildcard q
-        in  [SourceTag { field = putField wildcard, value = putField (wrap a)} | a <- values ]
-      where
-        wildcard = "*"
-        wrap v =  append wildcard $ append v $ wildcard

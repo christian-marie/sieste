@@ -12,7 +12,6 @@ module Sieste.Classes
     PointReader(..)
 ) where
 
-import Data.Text
 import Data.Word (Word64)
 import Marquise.Client
 import Pipes
