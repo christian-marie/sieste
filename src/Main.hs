@@ -21,6 +21,9 @@ import Sieste.SimpleSearch (simpleSearch)
 import Snap.Core
 import Snap.Http.Server
 import System.Environment (getEnv)
+import Paths_sieste (version)
+import Data.Version (showVersion)
+import qualified Data.ByteString.Char8 as BS
 
 main :: IO ()
 main = do
@@ -32,6 +35,7 @@ main = do
     async $ watchThreads chevalier_threads start_chevalier
 
     quickHttpServe $
+        --ifTop (writeBS docString) <|>
         ifTop (writeBS docString) <|>
         route [ ("simple/search", simpleSearch chevalier_query_mvar)
               , ("interpolated/:origin/:address", interpolated)
@@ -53,6 +57,6 @@ main = do
         let remaining_threads = filter (/= a) as
         watchThreads (restarted:remaining_threads) restart_action
 
-    docString = "<html>This is the Vaultaire REST interface. You can find \
+    docString = BS.pack $  "<html>This is the Vaultaire REST interface. You can find \
                 \documentation in the <a href=\"https://github.com/anchor/sieste\" \
-                \target=\"_blank\">project readme</a>."
+                \target=\"_blank\">project readme</a>.<br/>Version: " ++ ( showVersion version ) ++ "</html>"
