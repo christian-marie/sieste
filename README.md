@@ -6,7 +6,6 @@ REST interface to vaultaire
 ## Role
 To provide abstractions of all things Vaultaire related to consumers over HTTP and JSON.
 
-
 ## Current coverage
 ### /simple/search
 A simple interface to [Chevalier](https://github.com/anchor/chevalier), options avaliable are:
