@@ -22,6 +22,8 @@ Executable sieste
     snap-core                 >= 0.9   && < 0.11,
     snap-server               >= 0.9   && < 0.11,
     aeson                     >= 0.7,
+    transformers-compat       >= 0.3   && < 0.4,
+    blaze-builder             >= 0.3   && < 0.4,
     cereal,
     marquise,
     async,
