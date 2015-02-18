@@ -26,6 +26,7 @@ Executable sieste
     blaze-builder             >= 0.3   && < 0.4,
     cereal,
     marquise,
+    containers,
     async,
     zeromq4-haskell,
     base64-bytestring,

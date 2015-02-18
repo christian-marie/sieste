@@ -15,7 +15,15 @@ A simple interface to [Chevalier](https://github.com/anchor/chevalier), options 
 * `page_size`: the number of results per page.
 * `origin`: the origin you would like to search within
 
-Parameters `q` and `address` should be used for searching and specific id listings, accordingly, and should not be used in conjuction with each other. 
+Parameters `q` and `address` should be used for searching and specific id listings, accordingly, and should not be used in conjuction with each other.
+
+Advanced searching: `q` can be in form `?q=string` or `?q=key:value`, with a colon delimiter. 
+ * If there is a colon, the value is split into `("key","value")` and passed directly to chevalier for searching. 
+  * Any wildcards must be provided by the client. 
+ * If there is no colon, it is passed in the form `("*", "*" + string + "*")` - a wildcard key, and wildcard string
+wrapping.
+ * Exact searches for values with no known key is achieved by using the form `?q=*:value`, which will be passed as `("*","value")`.
+
 
 ### /interpolated/{origin}/{address}
 Displays interpolated values retrieved from [readerd](https://github.com/anchor/vaultaire/blob/master/lib/Vaultaire/Reader.hs), options avaliable are:
