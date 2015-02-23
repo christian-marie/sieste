@@ -6,13 +6,11 @@ REST interface to vaultaire
 ## Role
 To provide abstractions of all things Vaultaire related to consumers over HTTP and JSON.
 
-
 ## Terminology
 
 A **sourcedict** is a series of key-value pairs that identify a metric in the vault. These include a mandatory `address`, and zero or more metadata tags. 
 
 The **address** of a metric is the unique identifer used to retrieve datapoints for the metric from the vault
-
 
 ## Current coverage
 
@@ -29,7 +27,7 @@ Returns: a list of one or more sourcedicts, in the form of an array of strings, 
 
 Sample API call: 
 
-	    sieste.local/simple/search?origin=ABC123&q=*search* 
+	    /simple/search?origin=ABC123&q=*search* 
 
 Sample result: 
 
@@ -47,7 +45,6 @@ Displays interpolated values retrieved from [readerd](https://github.com/anchor/
 * `interval`: the distance between interpolated results, specified in seconds.
 * `_float`: used to flag if the datapoints are floats, as opposed to integers (default), as dictacted by the return values in the `simple/source` result
 
-
 Returns: an array of `time,value` pairs, where:
 
 * `time`: is the unix timestamp for the interpolated value.
@@ -55,7 +52,7 @@ Returns: an array of `time,value` pairs, where:
 	
 Sample API call
 
-	    sieste.local/interpolated/ABC123/XYZ456AA?start=1400000000&end=141000000&interval=10
+	    /interpolated/ABC123/XYZ456AA?start=1400000000&end=141000000&interval=10
 
 Sample result: 
 
@@ -71,7 +68,6 @@ Sample result if using `_float`:
 Renders points straight from [readerd](https://github.com/anchor/vaultaire/blob/master/lib/Vaultaire/Reader.hs) via [broker](https://github.com/anchor/vaultaire/blob/master/lib/Vaultaire/Broker.hs), no interpolation is done.
 
 
-
 * `origin`: the origin you would like to search within
 * `address`: the unique identifier of a source (within an origin)
 * `start`, `end`: unix epoch bounds for search
@@ -84,7 +80,7 @@ The format for output is [time, value] where:
 
 Sample API call: 
 
-		sieste.local/raw/ABC123/XYZ456AA?start=1400000000&end=141000000`
+		/raw/ABC123/XYZ456AA?start=1400000000&end=141000000`
 
 Sample result: 
 
