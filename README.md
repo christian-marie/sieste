@@ -17,11 +17,14 @@ The **address** of a metric is the unique identifer used to retrieve datapoints 
 ### /simple/search
 Query available metrics via [Chevalier](https://github.com/anchor/chevalier).
 
-* `q`: search query for any value of a key-value pair in a sourcedict
-* `origin`: the origin you would like to search within
-* `address`: the unique identifier of a source (within an origin)
-* `page`: the page requested for pagination.
-* `page_size`: the number of results per page.
+ * `q`: search query for any value of a key-value pair in a sourcedict. Forms: 
+  * exact match on exact strings, e.g. `?q=foobar` will match exactly on sourcedict with `key~foobar`
+  * wildcard match using asterisks, e.g.`?q=*foo*` will match on sourcedicts with `key~foobar`, `key~bazfoo`
+  * wildcard matches will only match for one value, e.g. `?q=*baz*fo*` will match `key~bazfoo`, but *not* `key~baz,key~foo`
+ * `origin`: the origin you would like to search within
+ * `address`: the unique identifier of a source (within an origin)
+ * `page`: the page requested for pagination.
+ * `page_size`: the number of results per page.
 
 Returns: a list of one or more sourcedicts, in the form of an array of strings, with comma-delimited key-value pairs, which are tilda-delimlited. e.g. `["key1~value1,key2~value2...",...]`
 
