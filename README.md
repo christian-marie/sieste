@@ -37,7 +37,7 @@ Parameters `q` and `address` should be used for searching and specific id listin
 
 ### /interpolated/{origin}/{address}
 
-Displays interpolated values retrieved from [readerd](https://github.com/anchor/vaultaire/blob/master/lib/Vaultaire/Reader.hs), options avaliable are:
+Displays interpolated values retrieved from the [vault](https://github.com/anchor/vaultaire/blob/master/lib/Vaultaire/Reader.hs), options avaliable are:
 
 * `origin`: the origin you would like to search within
 * `address`: the unique identifier of a source (within an origin)
@@ -65,7 +65,7 @@ Sample result if using `as_double`:
 
 ### /raw/{origin}/{address}
 
-Renders points straight from [readerd](https://github.com/anchor/vaultaire/blob/master/lib/Vaultaire/Reader.hs) via [broker](https://github.com/anchor/vaultaire/blob/master/lib/Vaultaire/Broker.hs), no interpolation is done.
+Renders points straight from the [vault](https://github.com/anchor/vaultaire/blob/master/lib/Vaultaire/Reader.hs) via [broker](https://github.com/anchor/vaultaire/blob/master/lib/Vaultaire/Broker.hs), no interpolation is done.
 
 
 * `origin`: the origin you would like to search within
