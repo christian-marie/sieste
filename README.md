@@ -43,12 +43,12 @@ Displays interpolated values retrieved from [readerd](https://github.com/anchor/
 * `address`: the unique identifier of a source (within an origin)
 * `start`, `end`: unix epoch bounds for search
 * `interval`: the distance between interpolated results, specified in seconds.
-* `_float`: used to flag if the datapoints are floats, as opposed to integers (default), as dictacted by the return values in the `simple/source` result
+* `as_double`: used to flag if the datapoints are doubles, as opposed to integers (default), as dictacted by the return values in the `simple/source` result
 
 Returns: an array of `time,value` pairs, where:
 
 * `time`: is the unix timestamp for the interpolated value.
-* `value`: is the linearly interpolated value between two numeric values. Integer, or float if `_float` is flagged.
+* `value`: is the linearly interpolated value between two numeric values. Integer, or double if `as_double` is flagged.
 	
 Sample API call
 
@@ -58,7 +58,7 @@ Sample result:
 
 	    [[1400000000,10],[1400000010,20],[1400000030,30]...]
 
-Sample result if using `_float`: 
+Sample result if using `as_double`: 
 
 	    [[1400000000,10.1],[1400000010,20.2],[1400000030,30.3]...]
 
@@ -71,12 +71,12 @@ Renders points straight from [readerd](https://github.com/anchor/vaultaire/blob/
 * `origin`: the origin you would like to search within
 * `address`: the unique identifier of a source (within an origin)
 * `start`, `end`: unix epoch bounds for search
-* `_float`: used to flag if the datapoints are floats, as opposed to integers (default), as dictacted by the return values in the `simple/source` result
+* `as_double`: used to flag if the datapoints are doubles, as opposed to integers (default), as dictacted by the return values in the `simple/source` result
 
 The format for output is [time, value] where:
 
 * time: is the unix timestamp, with extra precision in the form of a real number
-* value: is the value represented. Integer, or float if `_float` is flagged.
+* value: is the value represented. Integer, or double if `as_double` is flagged.
 
 Sample API call: 
 
@@ -86,6 +86,6 @@ Sample result:
 
 		[[1400000000,10],[1400000100,100],[1400000200,200]...]
 		
-Sample result if using `_float`: 
+Sample result if using `as_double`: 
 
 		[[1400000000,10.1],[1400000100,100.1],[1400000200,200.2]...]
