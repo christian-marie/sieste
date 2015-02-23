@@ -9,9 +9,9 @@ To provide abstractions of all things Vaultaire related to consumers over HTTP a
 
 ## Terminology
 
-A sourcedict is a series of key-value pairs that identify a metric in the vault. These include a mandatory `address`, and zero or more metadata tags. 
+A **sourcedict** is a series of key-value pairs that identify a metric in the vault. These include a mandatory `address`, and zero or more metadata tags. 
 
-The address of a metric is the unique identifer used to retrieve datapoints for the metric from the vault
+The **address** of a metric is the unique identifer used to retrieve datapoints for the metric from the vault
 
 
 ## Current coverage
@@ -51,7 +51,7 @@ Displays interpolated values retrieved from [readerd](https://github.com/anchor/
 Returns: an array of `time,value` pairs, where:
 
 * `time`: is the unix timestamp for the interpolated value.
-* `value`: is the linearly interpolated value between two numeric values
+* `value`: is the linearly interpolated value between two numeric values. Integer, or float if `_float` is flagged.
 	
 Sample API call
 
@@ -60,6 +60,10 @@ Sample API call
 Sample result: 
 
 	    [[1400000000,10],[1400000010,20],[1400000030,30]...]
+
+Sample result if using `_float`: 
+
+	    [[1400000000,10.1],[1400000010,20.2],[1400000030,30.3]...]
 
 
 ### /raw/{origin}/{address}
@@ -76,7 +80,7 @@ Renders points straight from [readerd](https://github.com/anchor/vaultaire/blob/
 The format for output is [time, value] where:
 
 * time: is the unix timestamp, with extra precision in the form of a real number
-* value: is the value represented
+* value: is the value represented. Integer, or float if `_float` is flagged.
 
 Sample API call: 
 
@@ -85,3 +89,7 @@ Sample API call:
 Sample result: 
 
 		[[1400000000,10],[1400000100,100],[1400000200,200]...]
+		
+Sample result if using `_float`: 
+
+		[[1400000000,10.1],[1400000100,100.1],[1400000200,200.2]...]
